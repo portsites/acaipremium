@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Açaí Premium | Pedido Digital</title>
+    
+    <!-- Google Fonts: Syne e DM Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Mapa de Importação para o Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Paleta Dark Premium */
+            --bg-base: #050208; 
+            --surface-card: rgba(255, 255, 255, 0.03); 
+            --surface-hover: rgba(255, 255, 255, 0.08); 
+            --surface-border: rgba(255, 255, 255, 0.08);
+            
+            --primary: #9d4edd; 
+            --primary-glow: rgba(157, 78, 221, 0.4);
+            --accent: #F4B41A; 
+            --green-leaf: #00b92b; 
+            
+            --text-main: #FDFBFF; 
+            --text-muted: #AFA8BA; 
+            --danger: #ff4d4d;
+            
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-base);
+            /* Imagem de fundo com sobreposição preta elegante */
+            background-image: 
+                linear-gradient(rgba(5, 2, 8, 0.88), rgba(5, 2, 8, 0.88)),
+                url('https://i.pinimg.com/1200x/85/7f/9a/857f9a5ece01583d358e4edacb1e50d5.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'DM Sans', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* CABEÇALHO E HERO SECTION */
+        .hero {
+            min-height: 85vh; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+            text-align: center; 
+            position: relative;
+        }
+
+        .header-top {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 20px 24px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 10;
+        }
+        
+        .brand { 
+            display: flex; align-items: center; gap: 12px; 
+            font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+        .brand img { width: 44px; border-radius: 50%; border: 2px solid var(--primary); background: #000; }
+        
+        .cart-trigger {
+            background: var(--surface-card); 
+            border: 1px solid var(--surface-border);
+            padding: 12px; border-radius: 50%; cursor: pointer;
+            transition: var(--transition); position: relative; color: var(--text-main);
+            backdrop-filter: blur(10px);
+        }
+        .cart-trigger:active { transform: scale(0.95); }
+        .cart-trigger:hover { background: var(--surface-hover); }
+        .cart-badge {
+            position: absolute; top: -4px; right: -4px; background: var(--accent); color: #000;
+            font-size: 12px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* CONTAINER THREE.JS & LOGO DE FUNDO */
+        .hero-3d-container {
+            width: min(420px, 90vw);
+            height: min(420px, 55vh);
+            margin-bottom: 24px;
+            margin-top: 60px;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Logo no fundo do 3D (Otimizada para fundo escuro) */
+        .hero-bg-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%; 
+            max-width: 650px;
+            opacity: 0.90; 
+            border-radius: 50%; 
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Brilho neon atrás do 3D */
+        .hero-3d-container::after {
+            content: ''; position: absolute; bottom: 10%; left: 20%; right: 20%; height: 30px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); border-radius: 50%;
+            z-index: -1; filter: blur(20px); pointer-events: none;
+        }
+
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            outline: none;
+            cursor: grab;
+            position: relative;
+            z-index: 1; 
+            filter: drop-shadow(0px 25px 35px rgba(0, 0, 0, 0.8));
+        }
+        #three-canvas:active { cursor: grabbing; }
+
+        /* ÍCONE ANIMADO (SWIPE) */
+        .swipe-hint {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: rgba(255, 255, 255, 0.9);
+            pointer-events: none; 
+            animation: swipe-move 2s infinite ease-in-out;
+            transition: opacity 0.5s ease;
+        }
+        .swipe-hint i.ph-hand-grabbing {
+            font-size: 42px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+        }
+        .swipe-hint i.ph-arrows-left-right {
+            font-size: 24px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+        }
+        .swipe-hint.hidden { opacity: 0; }
+        @keyframes swipe-move {
+            0% { transform: translate(-90%, -50%) rotate(-10deg); }
+            50% { transform: translate(-10%, -50%) rotate(10deg); }
+            100% { transform: translate(-90%, -50%) rotate(-10deg); }
+        }
+
+        .hero h1 { 
+            font-family: 'Syne', sans-serif; font-size: clamp(40px, 8vw, 56px); 
+            line-height: 1.05; font-weight: 800; text-transform: uppercase; 
+            margin-bottom: 16px; letter-spacing: -1px; color: var(--green-leaf);
+            text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+        }
+        .hero p { 
+            font-size: 16px; color: var(--text-muted); max-width: 380px; 
+            margin-bottom: 20px; font-weight: 500; line-height: 1.5;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+        }
+
+        /* BENTO GRID CATEGORIAS */
+        .bento-categories {
+            display: flex; gap: 16px; padding: 0 24px 48px 24px;
+            overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory;
+        }
+        .bento-categories::-webkit-scrollbar { display: none; }
+        
+        .bento-card {
+            min-width: 150px; height: 180px; border-radius: var(--radius-lg);
+            position: relative; overflow: hidden; scroll-snap-align: start;
+            cursor: pointer; transition: var(--transition);
+            background-color: #11091a;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid var(--surface-border);
+        }
+        .bento-card::before {
+            content: ''; position: absolute; inset: 0; 
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, transparent 80%); 
+            z-index: 1; transition: var(--transition);
+        }
+        .bento-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; opacity: 0.7;}
+        
+        .bento-card:hover img, .bento-card.active img { transform: scale(1.08); opacity: 1;}
+        .bento-card.active::before { background: linear-gradient(to top, rgba(157, 78, 221, 0.8) 0%, transparent 80%); }
+        .bento-card.active { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 8px 24px var(--primary-glow);}
+        
+        .bento-card span {
+            position: absolute; bottom: 16px; left: 16px; z-index: 2;
+            font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
+            letter-spacing: 0.5px; color: #fff;
+        }
+
+        /* LISTA DE PRODUTOS */
+        .menu-section { display: none; padding: 0 24px 120px 24px; }
+        .menu-section.active { display: block; }
+
+        .product-item {
+            background: var(--surface-card); backdrop-filter: blur(10px);
+            border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
+            padding: 24px; margin-bottom: 16px; display: flex; justify-content: space-between;
+            align-items: center; transition: var(--transition); cursor: pointer;
+        }
+        .product-item:active { transform: scale(0.98); }
+        .product-item:hover { background: var(--surface-hover); border-color: var(--primary); }
+        
+        .product-info h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);}
+        .product-info p { font-size: 14px; color: var(--text-muted); max-width: 260px; line-height: 1.5; font-weight: 400;}
+        
+        .product-action { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+        .product-price { font-weight: 700; color: var(--accent); font-size: 16px; letter-spacing: -0.5px;}
+        .btn-icon {
+            width: 40px; height: 40px; border-radius: 50%; background: var(--text-main); color: #000;
+            display: flex; align-items: center; justify-content: center; border: none; font-size: 20px; cursor: pointer;
+            transition: var(--transition); font-weight: bold;
+        }
+        .product-item:hover .btn-icon { background: var(--primary); color: #fff; transform: scale(1.1);}
+
+        /* SCROLL REVEAL ANIMATION */
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* FAB CARRINHO */
+        .fab-cart {
+            position: fixed; bottom: 24px; right: 24px; height: 60px; padding: 0 24px 0 16px;
+            background: var(--primary); color: #fff; border-radius: 100px;
+            display: flex; align-items: center; gap: 12px; box-shadow: 0 8px 24px var(--primary-glow);
+            cursor: pointer; z-index: 90; transition: var(--transition);
+            opacity: 0; pointer-events: none; transform: translateY(20px);
+        }
+        .fab-cart.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
+        .fab-cart:active { transform: scale(0.95); }
+        .fab-cart.pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .fab-icon-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
+        .fab-icon-wrapper i { font-size: 28px; }
+        .fab-badge {
+            position: absolute; top: -6px; right: -8px; background: var(--accent); color: #000;
+            font-size: 13px; font-weight: 800; width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg-base);
+        }
+        .fab-text { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
+
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+        /* MODAIS */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+            z-index: 1000; opacity: 0; pointer-events: none; transition: var(--transition);
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .modal-drawer {
+            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 90vh;
+            background: #0D0614; border-top: 1px solid var(--surface-border); border-radius: 32px 32px 0 0;
+            padding: 32px 24px; overflow-y: auto; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.8);
+        }
+        .modal-overlay.active .modal-drawer { transform: translateY(0); }
+        
+        .drawer-handle { width: 48px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 4px; margin: 0 auto 24px auto; }
+        
+        .close-x {
+            position: absolute; top: 24px; right: 24px; background: var(--surface-card); border: 1px solid var(--surface-border); color: var(--text-main);
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer; transition: var(--transition); z-index: 10;
+        }
+        .close-x:hover, .close-x:active { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+
+        .modal-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 24px; padding-right: 48px; letter-spacing: -0.5px; color: var(--text-main);}
+
+        .option-group { margin-bottom: 32px; }
+        .option-group h4 { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+        .option-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--surface-border); }
+        .option-row:last-child { border-bottom: none; }
+        .option-row label { display: flex; align-items: center; gap: 14px; cursor: pointer; flex: 1; font-size: 16px; font-weight: 500;}
+        .price-tag { color: var(--accent); font-weight: 700; font-size: 15px; }
+
+        input[type="checkbox"], input[type="radio"] { appearance: none; width: 24px; height: 24px; border: 2px solid #4a4453; border-radius: 6px; cursor: pointer; position: relative; transition: var(--transition); background: rgba(255,255,255,0.05); }
+        input[type="radio"] { border-radius: 50%; }
+        input:checked { border-color: var(--primary); background: var(--primary); }
+        input[type="checkbox"]:checked::after { content: '✓'; position: absolute; color: white; font-size: 14px; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold;}
+        input[type="radio"]:checked::after { content: ''; position: absolute; width: 8px; height: 8px; background: white; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%);}
+
+        .input-glass {
+            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--surface-border); color: var(--text-main); padding: 16px 20px; border-radius: var(--radius-md);
+            font-size: 16px; outline: none; transition: var(--transition); margin-bottom: 16px; font-family: inherit;
+        }
+        .input-glass:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); }
+        .input-glass::placeholder { color: #6E677A; }
+
+        .btn-glow {
+            width: 100%; background: var(--text-main); color: #000; border: none; padding: 20px; border-radius: 100px;
+            font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;
+            cursor: pointer; transition: var(--transition); position: sticky; bottom: 0; margin-top: 24px;
+        }
+        .btn-glow:active { transform: translateY(2px); background: var(--accent); }
+
+        .cart-item { background: rgba(255,255,255,0.03); border: 1px solid var(--surface-border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
+        .cart-item-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 8px; color: var(--text-main);}
+        .cart-item-details { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;}
+        .cart-controls { display: flex; justify-content: space-between; align-items: center; }
+        .qty-box { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 100px; border: 1px solid var(--surface-border);}
+        .qty-box button { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; font-weight: 600;}
+        .remove-btn { color: var(--danger); font-size: 14px; font-weight: 700; background: none; border: none; cursor: pointer;}
+        .form-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+
+        #loading-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 600;
+            color: var(--primary);
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER & HERO -->
+    <header class="hero">
+        <div class="header-top">
+            <div class="brand">
+                <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" alt="Logo">
+                <span>AÇAÍ <span style="color: var(--green-leaf);">PREMIUM</span></span>
+            </div>
+            <div class="cart-trigger" onclick="openDrawer('drawer-cart')">
+                <i class="ph ph-shopping-bag" style="font-size: 24px;"></i>
+                <div class="cart-badge" id="cart-count">0</div>
+            </div>
+        </div>
+
+        <!-- CONTAINER DO THREE.JS COM LOGO DE FUNDO E HINT DE SWIPE -->
+        <div class="hero-3d-container reveal">
+            <!-- Logo Grande de Fundo (Atrás do 3D) -->
+            <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" class="hero-bg-logo" alt="Logo de Fundo Açaí Premium">
+            
+            <div id="loading-text">Carregando Açaí 3D...</div>
+
+            <!-- Ícone Animado Indicando para Girar -->
+            <div class="swipe-hint" id="swipe-hint">
+                <i class="ph ph-hand-grabbing"></i>
+                <i class="ph ph-arrows-left-right"></i>
+            </div>
+
+            <!-- Onde o açaí em 3D será renderizado -->
+            <div id="three-canvas"></div>
+        </div>
+
+        <h1 class="reveal" style="color: var(--green-leaf);">Puro Sabor,<br>Estilo Único.</h1>
+        <p class="reveal">Monte do seu jeito com ingredientes premium e navegação ultra rápida.</p>
+    </header>
+
+    <!-- NAVEGAÇÃO BENTO GRID -->
+    <nav class="bento-categories reveal">
+        <div class="bento-card active" onclick="switchCategory('monte', this)">
+            <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" alt="Montar">
+            <span>Montar Açaí</span>
+        </div>
+        <div class="bento-card" onclick="switchCategory('especiais', this)">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" alt="Especiais">
+            <span>Especiais</span>
+        </div>
+        <div class="bento-card" onclick="switchCategory('barcas', this)">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTb1HeQ_tuH00jaBcNAPCjtDEDyItgQKdeNQQ&s" alt="Barcas">
+            <span>Barcas</span>
+        </div>
+        <div class="bento-card" onclick="switchCategory('cremes', this)">
+            <img src="https://s2-receitas.glbimg.com/fZHM_C_R40-glEZajUS4ELfARTA=/0x0:900x1600/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_1f540e0b94d8437dbbc39d567a1dee68/internal_photos/bs/2023/5/4/HnkJ6NTpikR000UtRv6Q/pudim-de-leite-com-creme-de-cupuacu-1-.jpeg" alt="Cremes">
+            <span>Cremes</span>
+        </div>
+    </nav>
+
+    <!-- LISTA DE PRODUTOS -->
+    <main>
+        <!-- ABA: MONTAR -->
+        <section id="monte" class="menu-section active">
+            <div class="product-item reveal" onclick="openProduct('Açaí Tradicional', 12.00, true)">
+                <div class="product-info">
+                    <h3>Açaí Tradicional</h3>
+                    <p>Copo de açaí montado do seu jeito, escolha o tamanho e todos os complementos.</p>
+                </div>
+                <div class="product-action">
+                    <span class="product-price">A partir R$12</span>
+                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+            <div class="product-item reveal" onclick="openProduct('Açaí Zero Açúcar', 14.00, true)">
+                <div class="product-info">
+                    <h3>Açaí Zero Açúcar</h3>
+                    <p>Sabor premium intenso, adoçado apenas com Stevia natural.</p>
+                </div>
+                <div class="product-action">
+                    <span class="product-price">A partir R$14</span>
+                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA: ESPECIAIS -->
+        <section id="especiais" class="menu-section">
+            <div class="product-item reveal" onclick="quickAdd('Vulcão de Nutella 500ml', 28.00)">
+                <div class="product-info">
+                    <h3>Vulcão de Nutella (500ml)</h3>
+                    <p>Copo lambuzado de Nutella, morango fresco, leite ninho e Kinder Bueno.</p>
+                </div>
+                <div class="product-action">
+                    <span class="product-price">R$ 28,00</span>
+                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+            <div class="product-item reveal" onclick="quickAdd('Copo Sensação 700ml', 32.00)">
+                <div class="product-info">
+                    <h3>Copo Sensação (700ml)</h3>
+                    <p>Açaí em camadas com creme de morango artesanal e calda de chocolate.</p>
+                </div>
+                <div class="product-action">
+                    <span class="product-price">R$ 32,00</span>
+                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA: BARCAS -->
+        <section id="barcas" class="menu-section">
+            <div class="product-item reveal" onclick="quickAdd('Barca Premium 1 Litro', 45.00)">
+                <div class="product-info">
+                    <h3>Barca Premium (1 Litro)</h3>
+                    <p>Açaí na barca acompanhado de 5 complementos à sua escolha (informe na observação do carrinho).</p>
+                </div>
+                <div class="product-action">
+                    <span class="product-price">R$ 45,00</span>
+                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA: CREMES -->
+        <section id="cremes" class="menu-section">
+            <div class="product-item reveal" onclick="openProduct('Creme de Cupuaçu', 14.00, true)">
+                <div class="product-info">
+                    <h3>Creme de Cupuaçu</h3>
+                    <p>Autêntico creme artesanal com o azedinho inconfundível.</p>
+                </div>
+                <div class="product-action">
+                    <span class="product-price">A partir R$14</span>
+                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FAB CARRINHO -->
+    <div class="fab-cart" id="fab-cart" onclick="openDrawer('drawer-cart')">
+        <div class="fab-icon-wrapper">
+            <i class="ph ph-shopping-cart"></i>
+            <div class="fab-badge" id="fab-count">0</div>
+        </div>
+        <span class="fab-text">Concluir Pedido</span>
+    </div>
+
+    <!-- DRAWER: CUSTOMIZAÇÃO DO PRODUTO -->
+    <div class="modal-overlay" id="drawer-product">
+        <div class="modal-drawer">
+            <button class="close-x" onclick="closeDrawer('drawer-product')"><i class="ph ph-x"></i></button>
+            <div class="drawer-handle" onclick="closeDrawer('drawer-product')"></div>
+            <h2 class="modal-title" id="prod-title">Montar Açaí</h2>
+            
+            <div class="option-group">
+                <h4>1. Tamanho</h4>
+                <div class="option-row"><label><input type="radio" name="size" value="300ml|0" onchange="calcLivePrice()" checked> Copo 300ml</label><span class="price-tag">+ R$ 0,00</span></div>
+                <div class="option-row"><label><input type="radio" name="size" value="500ml|4" onchange="calcLivePrice()"> Copo 500ml</label><span class="price-tag">+ R$ 4,00</span></div>
+                <div class="option-row"><label><input type="radio" name="size" value="700ml|8" onchange="calcLivePrice()"> Copo 700ml</label><span class="price-tag">+ R$ 8,00</span></div>
+            </div>
+
+            <div class="option-group">
+                <h4>2. Complementos</h4>
+                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Leite em Pó|2.50" onchange="calcLivePrice()"> Leite em Pó</label><span class="price-tag">+ R$ 2,50</span></div>
+                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Leite Condensado|3.00" onchange="calcLivePrice()"> Leite Condensado</label><span class="price-tag">+ R$ 3,00</span></div>
+                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Morango|4.00" onchange="calcLivePrice()"> Morango Fresco</label><span class="price-tag">+ R$ 4,00</span></div>
+                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Nutella|6.00" onchange="calcLivePrice()"> Nutella</label><span class="price-tag">+ R$ 6,00</span></div>
+                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Paçoca|2.00" onchange="calcLivePrice()"> Paçoca</label><span class="price-tag">+ R$ 2,00</span></div>
+            </div>
+
+            <textarea id="prod-obs" class="input-glass" rows="2" placeholder="Alguma observação especial?"></textarea>
+
+            <button class="btn-glow" onclick="addConfiguredProduct()">Adicionar • <span id="live-price-btn">R$ 12,00</span></button>
+        </div>
+    </div>
+
+    <!-- DRAWER: CARRINHO -->
+    <div class="modal-overlay" id="drawer-cart">
+        <div class="modal-drawer">
+            <button class="close-x" onclick="closeDrawer('drawer-cart')"><i class="ph ph-x"></i></button>
+            <div class="drawer-handle" onclick="closeDrawer('drawer-cart')"></div>
+            <h2 class="modal-title">Sua Sacola</h2>
+            
+            <div id="cart-content"></div>
+
+            <div id="cart-footer" style="display: none; margin-top: 24px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-family: 'Syne', sans-serif; font-size:20px; font-weight:800; color: var(--text-main);">
+                    <span>Subtotal</span> <span id="cart-subtotal" style="color: var(--accent);">R$ 0,00</span>
+                </div>
+                <button class="btn-glow" onclick="proceedToCheckout()">FINALIZAR COMPRA</button>
+            </div>
+
+            <div id="cart-empty" style="text-align: center; color: var(--text-muted); padding: 60px 0;">
+                <i class="ph ph-shopping-cart" style="font-size: 56px; margin-bottom: 20px; opacity: 0.3; color: var(--primary);"></i>
+                <p style="font-size: 16px; font-weight: 500;">Sua sacola de experiências está vazia.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRAWER: CHECKOUT -->
+    <div class="modal-overlay" id="drawer-checkout">
+        <div class="modal-drawer">
+            <button class="close-x" onclick="closeDrawer('drawer-checkout')"><i class="ph ph-x"></i></button>
+            <div class="drawer-handle" onclick="closeDrawer('drawer-checkout')"></div>
+            <h2 class="modal-title">Checkout</h2>
+
+            <div id="chk-step-1">
+                <input type="text" id="chk-nome" class="input-glass" placeholder="Seu nome completo">
+                <select id="chk-tipo" class="input-glass" onchange="toggleDelivery()">
+                    <option value="entrega">Entrega via Motoboy (+ R$ 4,00)</option>
+                    <option value="retirada">Retirar na Loja (Grátis)</option>
+                </select>
+                <button class="btn-glow" onclick="stepCheck(2)">AVANÇAR</button>
+            </div>
+
+            <div id="chk-step-2" style="display:none;">
+                <div id="address-container">
+                    <input type="text" id="chk-rua" class="input-glass" placeholder="Nome da Rua">
+                    <div class="form-grid">
+                        <input type="text" id="chk-num" class="input-glass" placeholder="Número">
+                        <input type="text" id="chk-bairro" class="input-glass" placeholder="Bairro">
+                    </div>
+                </div>
+                <select id="chk-pagamento" class="input-glass" onchange="toggleTroco()">
+                    <option value="pix">PIX</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="cartao">Cartão na Entrega</option>
+                </select>
+                <input type="text" id="chk-troco" class="input-glass" placeholder="Troco para quanto?" style="display:none;">
+                
+                <button class="btn-glow" onclick="finishOrder()">ENVIAR PEDIDO • <span id="final-total">R$ 0,00</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica de Interface e Scripts Menores -->
+    <script>
+        const WHATSAPP = "5538988276722"; 
+        const TAXA = 4.00;
+        let cart = [];
+        let basePrice = 0; let prodName = "";
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        function switchCategory(id, el) {
+            document.querySelectorAll('.bento-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.menu-section').forEach(s => {
+                s.classList.remove('active');
+                s.querySelectorAll('.reveal').forEach(r => r.classList.remove('active'));
+            });
+            const target = document.getElementById(id);
+            target.classList.add('active');
+            setTimeout(() => {
+                target.querySelectorAll('.reveal').forEach(r => r.classList.add('active'));
+            }, 50);
+        }
+
+        function openDrawer(id) { document.getElementById(id).classList.add('active'); }
+        function closeDrawer(id) { document.getElementById(id).classList.remove('active'); }
+
+        function openProduct(name, price) {
+            prodName = name; basePrice = price;
+            document.getElementById('prod-title').innerText = name;
+            document.querySelector('input[name="size"]').checked = true;
+            document.querySelectorAll('.cb-addon').forEach(cb => cb.checked = false);
+            document.getElementById('prod-obs').value = "";
+            calcLivePrice();
+            openDrawer('drawer-product');
+        }
+
+        function calcLivePrice() {
+            let total = basePrice;
+            const size = document.querySelector('input[name="size"]:checked');
+            if(size) total += parseFloat(size.value.split('|')[1]);
+            document.querySelectorAll('.cb-addon:checked').forEach(cb => total += parseFloat(cb.value.split('|')[1]));
+            document.getElementById('live-price-btn').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
+            return total;
+        }
+
+        function animateFab() {
+            const fab = document.getElementById('fab-cart');
+            fab.classList.remove('pop');
+            void fab.offsetWidth; 
+            fab.classList.add('pop');
+        }
+
+        function addConfiguredProduct() {
+            const s = document.querySelector('input[name="size"]:checked').value.split('|');
+            let addons = []; document.querySelectorAll('.cb-addon:checked').forEach(c => addons.push(c.value.split('|')[0]));
+            cart.push({
+                id: Date.now(), name: prodName, size: s[0], addons: addons,
+                obs: document.getElementById('prod-obs').value, unitPrice: calcLivePrice(), qty: 1
+            });
+            closeDrawer('drawer-product'); 
+            updateCart();
+            animateFab();
+        }
+
+        function quickAdd(name, price) {
+            cart.push({ id: Date.now(), name: name, size: '', addons: [], obs: '', unitPrice: price, qty: 1 });
+            updateCart();
+            animateFab();
+        }
+
+        function updateCart() {
+            const count = cart.reduce((s, i) => s + i.qty, 0);
+            document.getElementById('cart-count').innerText = count;
+            document.getElementById('fab-count').innerText = count;
+            
+            const fab = document.getElementById('fab-cart');
+            if(count > 0) { fab.classList.add('visible'); } else { fab.classList.remove('visible'); }
+            
+            const cont = document.getElementById('cart-content');
+            if(cart.length === 0) {
+                cont.innerHTML = '';
+                document.getElementById('cart-empty').style.display = 'block';
+                document.getElementById('cart-footer').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('cart-empty').style.display = 'none';
+            document.getElementById('cart-footer').style.display = 'block';
+            cont.innerHTML = '';
+            let sub = 0;
+
+            cart.forEach((i, idx) => {
+                sub += (i.unitPrice * i.qty);
+                let html = `<div class="cart-item">
+                    <div class="cart-item-title">${i.name} ${i.size ? `(${i.size})` : ''} - R$ ${(i.unitPrice * i.qty).toFixed(2).replace('.',',')}</div>
+                    ${i.addons.length ? `<div class="cart-item-details">+ ${i.addons.join(', ')}</div>` : ''}
+                    <div class="cart-controls">
+                        <button class="remove-btn" onclick="rmItem(${idx})">Remover</button>
+                        <div class="qty-box">
+                            <button onclick="chgQty(${idx}, -1)">-</button>
+                            <span>${i.qty}</span>
+                            <button onclick="chgQty(${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>`;
+                cont.insertAdjacentHTML('beforeend', html);
+            });
+            document.getElementById('cart-subtotal').innerText = `R$ ${sub.toFixed(2).replace('.',',')}`;
+        }
+
+        function chgQty(i, d) { cart[i].qty += d; if(cart[i].qty <= 0) cart.splice(i, 1); updateCart(); }
+        function rmItem(i) { cart.splice(i, 1); updateCart(); }
+
+        function proceedToCheckout() { closeDrawer('drawer-cart'); stepCheck(1); openDrawer('drawer-checkout'); }
+        
+        function stepCheck(step) {
+            document.getElementById('chk-step-1').style.display = step === 1 ? 'block' : 'none';
+            document.getElementById('chk-step-2').style.display = step === 2 ? 'block' : 'none';
+            if(step === 2 && document.getElementById('chk-tipo').value === 'retirada') {
+                document.getElementById('address-container').style.display = 'none';
+            } else {
+                document.getElementById('address-container').style.display = 'block';
+            }
+            let sub = cart.reduce((s, i) => s + (i.unitPrice * i.qty), 0);
+            let tot = sub + (document.getElementById('chk-tipo').value === 'entrega' ? TAXA : 0);
+            document.getElementById('final-total').innerText = `R$ ${tot.toFixed(2).replace('.',',')}`;
+        }
+
+        function toggleDelivery() { stepCheck(1); }
+        function toggleTroco() { document.getElementById('chk-troco').style.display = document.getElementById('chk-pagamento').value === 'dinheiro' ? 'block' : 'none'; }
+
+        function finishOrder() {
+            const nome = document.getElementById('chk-nome').value;
+            if(!nome) return alert('Preencha seu nome');
+            
+            let t = `*NOVO PEDIDO | AÇAÍ PREMIUM*\n\n`;
+            let sub = 0;
+            
+            cart.forEach(i => { 
+                sub += (i.unitPrice * i.qty); 
+                t += `\u25AA ${i.qty}x ${i.name} ${i.size ? `(${i.size})` : ''}\n`;
+                if(i.addons.length > 0) t += `   \u2795 ${i.addons.join(', ')}\n`;
+                if(i.obs) t += `   \uD83D\uDCDD Obs: ${i.obs}\n`;
+            });
+            
+            const tipo = document.getElementById('chk-tipo').value;
+            let tot = sub + (tipo === 'entrega' ? TAXA : 0);
+            
+            t += `\n\uD83D\uDCB0 Subtotal: R$ ${sub.toFixed(2)}`;
+            if(tipo === 'entrega') t += `\n\uD83D\uDE9A Entrega: R$ ${TAXA.toFixed(2)}`;
+            t += `\n*\uD83E\uDDFE TOTAL: R$ ${tot.toFixed(2)}*\n\n`;
+            
+            t += `\uD83D\uDC64 Nome: ${nome}\n`;
+            t += `\uD83D\uDCCD Mod: ${tipo === 'entrega' ? 'Entrega' : 'Retirada na Loja'}\n`;
+            
+            if(tipo === 'entrega') {
+                t += `\uD83C\uDFE0 Endereço: ${document.getElementById('chk-rua').value}, ${document.getElementById('chk-num').value} - ${document.getElementById('chk-bairro').value}\n`;
+            }
+            
+            const pag = document.getElementById('chk-pagamento').options[document.getElementById('chk-pagamento').selectedIndex].text;
+            t += `\uD83D\uDCB3 Pagt: ${pag}`;
+            
+            if (document.getElementById('chk-pagamento').value === 'dinheiro') {
+                const troco = document.getElementById('chk-troco').value;
+                if(troco) t += ` (\uD83D\uDCB5 Troco p/: R$ ${troco})`;
+            }
+            
+            // Usando a API oficial do WhatsApp que não quebra emojis
+            const url = `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+
+    <!-- Lógica do THREE.JS para Material de Vidro, Rotação Inicial e Iluminação Roxa -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+        const container = document.getElementById('three-canvas');
+        const loadingText = document.getElementById('loading-text');
+
+        // Scene setup
+        const scene = new THREE.Scene();
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.01, 100);
+        camera.position.set(0, 1.5, 3.5);
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        // Environment para reflexos realistas do vidro
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+
+        // --- ILUMINAÇÃO "MEIO ROXA" ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        // Luz direcional Roxa vibrante
+        const purpleLight1 = new THREE.DirectionalLight(0x8A2BE2, 3.0); 
+        purpleLight1.position.set(2, 3, 2);
+        scene.add(purpleLight1);
+
+        // Luz de preenchimento (roxa secundária)
+        const purpleLight2 = new THREE.PointLight(0x9d4edd, 4, 10);
+        purpleLight2.position.set(-2, 1, -2);
+        scene.add(purpleLight2);
+
+        // Luz frontal branca suave
+        const fillLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        fillLight.position.set(0, 2, 5);
+        scene.add(fillLight);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 2.0;
+        controls.enablePan = false;
+        
+        // --- DESATIVAR ZOOM E RESTRINGIR AO EIXO HORIZONTAL ---
+        controls.enableZoom = false;
+        controls.minPolarAngle = Math.PI / 2.3; // Trava o limite superior da rotação vertical
+        controls.maxPolarAngle = Math.PI / 2.3; // Trava o limite inferior da rotação vertical
+
+        // Esconder o hint de swipe quando o usuário interagir
+        controls.addEventListener('start', function() {
+            const swipeHint = document.getElementById('swipe-hint');
+            if (swipeHint && !swipeHint.classList.contains('hidden')) {
+                swipeHint.classList.add('hidden');
+            }
+        });
+
+        // Load GLTF Model
+        const loader = new GLTFLoader();
+        loader.load('./modelos/acai_bowl.glb', function (gltf) {
+            const model = gltf.scene;
+
+            // Esconde o texto de loading
+            if(loadingText) loadingText.style.display = 'none';
+
+            // Centraliza e ajusta escala do modelo
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 2.0 / maxDim; 
+            model.scale.set(scale, scale, scale);
+            model.position.sub(center.multiplyScalar(scale));
+
+            // INCLINAÇÃO DO MODELO: 22.5 Graus para a esquerda (eixo Z)
+            model.rotation.z = 22.5 * (Math.PI / 180);
+
+            // Aplica materiais de Vidro e Ajustes
+            model.traverse((node) => {
+                if (node.isMesh) {
+                    const oldMat = node.material;
+                    
+                    // Identifica a tigela
+                    if (oldMat.name === 'Material.001' || oldMat.transparent || oldMat.opacity < 1) {
+                        node.material = new THREE.MeshPhysicalMaterial({
+                            color: 0xffffff,
+                            metalness: 0.1,
+                            roughness: 0.1,
+                            transmission: 1.0, 
+                            ior: 1.5,
+                            thickness: 0.5,
+                            envMapIntensity: 2.0,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                    } else if (oldMat instanceof THREE.MeshStandardMaterial) {
+                        oldMat.roughness = Math.max(0.1, oldMat.roughness - 0.2); 
+                        oldMat.envMapIntensity = 1.2;
+                        oldMat.needsUpdate = true;
+                    }
+                }
+            });
+
+            scene.add(model);
+        }, undefined, function (error) {
+            console.error('Erro ao carregar o modelo 3D:', error);
+            if(loadingText) loadingText.innerText = "Erro ao carregar o 3D.";
+        });
+
+        // Responsividade do Canvas
+        window.addEventListener('resize', () => {
+            if(container.clientWidth > 0 && container.clientHeight > 0) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
+
+        // Loop de Renderização
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
