@@ -576,7 +576,7 @@
         </div>
     </div>
 
-    <!-- Lógica de Interface e API WhatsApp -->
+    <!-- Lógica de Interface e Scripts Menores -->
     <script>
         const WHATSAPP = "5538988276722"; 
         const TAXA = 4.00;
@@ -715,7 +715,7 @@
         function toggleTroco() { document.getElementById('chk-troco').style.display = document.getElementById('chk-pagamento').value === 'dinheiro' ? 'block' : 'none'; }
 
         function finishOrder() {
-            const nome = document.getElementById('chk-nome').value.trim();
+            const nome = document.getElementById('chk-nome').value;
             if(!nome) return alert('Preencha seu nome');
             
             let t = `*NOVO PEDIDO | AÇAÍ PREMIUM*\n\n`;
@@ -723,48 +723,40 @@
             
             cart.forEach(i => { 
                 sub += (i.unitPrice * i.qty); 
-                t += `\u25AA *${i.qty}x ${i.name}* ${i.size ? `(${i.size})` : ''}\n`;
+                t += `\u25AA ${i.qty}x ${i.name} ${i.size ? `(${i.size})` : ''}\n`;
                 if(i.addons.length > 0) t += `   \u2795 ${i.addons.join(', ')}\n`;
                 if(i.obs) t += `   \uD83D\uDCDD Obs: ${i.obs}\n`;
-                t += `\n`;
             });
             
             const tipo = document.getElementById('chk-tipo').value;
             let tot = sub + (tipo === 'entrega' ? TAXA : 0);
             
-            t += `\uD83D\uDCB0 *Subtotal:* R$ ${sub.toFixed(2).replace('.', ',')}\n`;
-            if(tipo === 'entrega') t += `\uD83D\uDEF5 *Entrega:* R$ ${TAXA.toFixed(2).replace('.', ',')}\n`;
-            t += `*\uD83E\uDDFE TOTAL: R$ ${tot.toFixed(2).replace('.', ',')}*\n\n`;
+            t += `\n\uD83D\uDCB0 Subtotal: R$ ${sub.toFixed(2)}`;
+            if(tipo === 'entrega') t += `\n\uD83D\uDE9A Entrega: R$ ${TAXA.toFixed(2)}`;
+            t += `\n*\uD83E\uDDFE TOTAL: R$ ${tot.toFixed(2)}*\n\n`;
             
-            t += `\uD83D\uDC64 *Cliente:* ${nome}\n`;
-            t += `\uD83D\uDCCD *Modo:* ${tipo === 'entrega' ? 'Entrega em Domicílio' : 'Retirada na Loja'}\n`;
+            t += `\uD83D\uDC64 Nome: ${nome}\n`;
+            t += `\uD83D\uDCCD Mod: ${tipo === 'entrega' ? 'Entrega' : 'Retirada na Loja'}\n`;
             
             if(tipo === 'entrega') {
-                const rua = document.getElementById('chk-rua').value;
-                const num = document.getElementById('chk-num').value;
-                const bairro = document.getElementById('chk-bairro').value;
-                if(!rua || !num || !bairro) {
-                    alert('Preencha os campos obrigatórios do endereço (Rua, Número, Bairro).');
-                    return;
-                }
-                t += `\uD83C\uDFE0 *Endereço:* ${rua}, nº ${num} - ${bairro}\n`;
+                t += `\uD83C\uDFE0 Endereço: ${document.getElementById('chk-rua').value}, ${document.getElementById('chk-num').value} - ${document.getElementById('chk-bairro').value}\n`;
             }
             
-            const pagSel = document.getElementById('chk-pagamento');
-            const pag = pagSel.options[pagSel.selectedIndex].text;
-            t += `\uD83D\uDCB3 *Pagamento:* ${pag}\n`;
+            const pag = document.getElementById('chk-pagamento').options[document.getElementById('chk-pagamento').selectedIndex].text;
+            t += `\uD83D\uDCB3 Pagt: ${pag}`;
             
-            if (pagSel.value === 'dinheiro') {
+            if (document.getElementById('chk-pagamento').value === 'dinheiro') {
                 const troco = document.getElementById('chk-troco').value;
-                if(troco) t += `\uD83D\uDCB5 *Troco para:* R$ ${troco}\n`;
+                if(troco) t += ` (\uD83D\uDCB5 Troco p/: R$ ${troco})`;
             }
             
+            // Usando a API oficial do WhatsApp que não quebra emojis
             const url = `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t)}`;
             window.open(url, '_blank');
         }
     </script>
 
-    <!-- Lógica do THREE.JS para Material de Vidro, Rotação e Hint Animado -->
+    <!-- Lógica do THREE.JS para Material de Vidro, Rotação Inicial e Iluminação Roxa -->
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -774,46 +766,27 @@
         const container = document.getElementById('three-canvas');
         const loadingText = document.getElementById('loading-text');
 
+        // Scene setup
         const scene = new THREE.Scene();
 
+        // Camera
         const camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.01, 100);
         camera.position.set(0, 1.5, 3.5);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
-        container.appendChild(renderer.domElement);
-
-        const pmremGenerator = new THREE.PMREMGenerator(renderer);
-        scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
-
-        const purpleLight1 = new THREE.DirectionalLight(0x8A2BE2, 3.0); 
-        purpleLight1.position.set(2, 3, 2);
-        scene.add(purpleLight1);
-
-        const purpleLight2 = new THREE.PointLight(0x9d4edd, 4, 10);
-        purpleLight2.position.set(-2, 1, -2);
-        scene.add(purpleLight2);
-
-        const fillLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        fillLight.position.set(0, 2, 5);
-        scene.add(fillLight);
-
+        
+        // Controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.autoRotate = true;
         controls.autoRotateSpeed = 2.0;
         controls.enablePan = false;
+        
+        // --- DESATIVAR ZOOM E RESTRINGIR AO EIXO HORIZONTAL ---
         controls.enableZoom = false;
-        controls.minPolarAngle = Math.PI / 2.3; 
-        controls.maxPolarAngle = Math.PI / 2.3; 
+        controls.minPolarAngle = Math.PI / 2.3; // Trava o limite superior da rotação vertical
+        controls.maxPolarAngle = Math.PI / 2.3; // Trava o limite inferior da rotação vertical
 
+        // Esconder o hint de swipe quando o usuário interagir
         controls.addEventListener('start', function() {
             const swipeHint = document.getElementById('swipe-hint');
             if (swipeHint && !swipeHint.classList.contains('hidden')) {
@@ -821,12 +794,15 @@
             }
         });
 
+        // Load GLTF Model
         const loader = new GLTFLoader();
-        loader.load('./acai_bowl.glb', function (gltf) {
+        loader.load('./modelos/acai_bowl.glb', function (gltf) {
             const model = gltf.scene;
 
+            // Esconde o texto de loading
             if(loadingText) loadingText.style.display = 'none';
 
+            // Centraliza e ajusta escala do modelo
             const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
@@ -838,12 +814,39 @@
             // INCLINAÇÃO DO MODELO: 22.5 Graus para a esquerda (eixo Z)
             model.rotation.z = 22.5 * (Math.PI / 180);
 
+            // Aplica materiais de Vidro e Ajustes
+            model.traverse((node) => {
+                if (node.isMesh) {
+                    const oldMat = node.material;
+                    
+                    // Identifica a tigela
+                    if (oldMat.name === 'Material.001' || oldMat.transparent || oldMat.opacity < 1) {
+                        node.material = new THREE.MeshPhysicalMaterial({
+                            color: 0xffffff,
+                            metalness: 0.1,
+                            roughness: 0.1,
+                            transmission: 1.0, 
+                            ior: 1.5,
+                            thickness: 0.5,
+                            envMapIntensity: 2.0,
+                            transparent: true,
+                            side: THREE.DoubleSide
+                        });
+                    } else if (oldMat instanceof THREE.MeshStandardMaterial) {
+                        oldMat.roughness = Math.max(0.1, oldMat.roughness - 0.2); 
+                        oldMat.envMapIntensity = 1.2;
+                        oldMat.needsUpdate = true;
+                    }
+                }
+            });
+
             scene.add(model);
         }, undefined, function (error) {
             console.error('Erro ao carregar o modelo 3D:', error);
             if(loadingText) loadingText.innerText = "Erro ao carregar o 3D.";
         });
 
+        // Responsividade do Canvas
         window.addEventListener('resize', () => {
             if(container.clientWidth > 0 && container.clientHeight > 0) {
                 camera.aspect = container.clientWidth / container.clientHeight;
@@ -852,6 +855,7 @@
             }
         });
 
+        // Loop de Renderização
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
