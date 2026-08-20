@@ -5,14 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Açaí Premium | Pedido Digital</title>
     
-    <!-- Pré-carregamento do 3D para otimizar velocidade -->
+    <!-- 1. OTIMIZAÇÃO: Pré-conexão com servidores externos para acelerar o download -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com">
+    
+    <!-- 2. OTIMIZAÇÃO: Pré-carregamento do 3D -->
     <link rel="preload" href="./acai_bowl.glb" as="fetch" crossorigin="anonymous">
 
-    <!-- Google Fonts: Syne e DM Sans -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- 3. OTIMIZAÇÃO: O 'defer' impede que o script bloqueie a renderização do site -->
+    <script defer src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <!-- Mapa de Importação para o Three.js -->
     <script type="importmap">
@@ -26,7 +31,6 @@
 
     <style>
         :root {
-            /* Paleta Dark Premium */
             --bg-base: #050208; 
             --surface-card: rgba(255, 255, 255, 0.03); 
             --surface-hover: rgba(255, 255, 255, 0.08); 
@@ -50,7 +54,6 @@
 
         body {
             background-color: var(--bg-base);
-            /* Imagem de fundo com sobreposição preta elegante */
             background-image: 
                 linear-gradient(rgba(5, 2, 8, 0.88), rgba(5, 2, 8, 0.88)),
                 url('https://i.pinimg.com/1200x/85/7f/9a/857f9a5ece01583d358e4edacb1e50d5.jpg');
@@ -64,7 +67,6 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* CABEÇALHO E HERO SECTION */
         .hero {
             min-height: 85vh; 
             display: flex; 
@@ -103,7 +105,6 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* CONTAINER THREE.JS & LOGO DE FUNDO */
         .hero-3d-container {
             width: min(420px, 90vw);
             height: min(420px, 55vh);
@@ -116,7 +117,6 @@
             justify-content: center;
         }
         
-        /* Logo no fundo do 3D */
         .hero-bg-logo {
             position: absolute;
             top: 50%;
@@ -130,7 +130,6 @@
             pointer-events: none;
         }
 
-        /* Brilho neon atrás do 3D */
         .hero-3d-container::after {
             content: ''; position: absolute; bottom: 10%; left: 20%; right: 20%; height: 30px;
             background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); border-radius: 50%;
@@ -148,7 +147,6 @@
         }
         #three-canvas:active { cursor: grabbing; }
 
-        /* ÍCONE ANIMADO (SWIPE) */
         .swipe-hint {
             position: absolute;
             top: 55%;
@@ -190,10 +188,12 @@
             text-shadow: 0 2px 10px rgba(0,0,0,0.9);
         }
 
-        /* BENTO GRID CATEGORIAS */
         .bento-categories {
             display: flex; gap: 16px; padding: 0 24px 48px 24px;
             overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory;
+            /* 4. OTIMIZAÇÃO: Suaviza o scroll na CPU */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
         }
         .bento-categories::-webkit-scrollbar { display: none; }
         
@@ -204,6 +204,8 @@
             background-color: #11091a;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             border: 1px solid var(--surface-border);
+            /* Impede re-renderizações complexas */
+            transform: translateZ(0);
         }
         .bento-card::before {
             content: ''; position: absolute; inset: 0; 
@@ -222,7 +224,6 @@
             letter-spacing: 0.5px; color: #fff;
         }
 
-        /* LISTA DE PRODUTOS */
         .menu-section { display: none; padding: 0 24px 120px 24px; }
         .menu-section.active { display: block; }
 
@@ -247,11 +248,9 @@
         }
         .product-item:hover .btn-icon { background: var(--primary); color: #fff; transform: scale(1.1);}
 
-        /* SCROLL REVEAL ANIMATION */
         .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
         .reveal.active { opacity: 1; transform: translateY(0); }
 
-        /* FAB CARRINHO */
         .fab-cart {
             position: fixed; bottom: 24px; right: 24px; height: 60px; padding: 0 24px 0 16px;
             background: var(--primary); color: #fff; border-radius: 100px;
@@ -274,7 +273,6 @@
 
         @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
 
-        /* MODAIS */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
             z-index: 1000; opacity: 0; pointer-events: none; transition: var(--transition);
@@ -386,20 +384,21 @@
 
     <!-- NAVEGAÇÃO BENTO GRID -->
     <nav class="bento-categories reveal">
+        <!-- 5. OTIMIZAÇÃO: Imagens secundárias agora usam loading="lazy" e decoding="async" -->
         <div class="bento-card active" onclick="switchCategory('monte', this)">
-            <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" alt="Montar">
+            <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" alt="Montar" loading="lazy" decoding="async">
             <span>Montar Açaí</span>
         </div>
         <div class="bento-card" onclick="switchCategory('especiais', this)">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" alt="Especiais">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" alt="Especiais" loading="lazy" decoding="async">
             <span>Especiais</span>
         </div>
         <div class="bento-card" onclick="switchCategory('barcas', this)">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTb1HeQ_tuH00jaBcNAPCjtDEDyItgQKdeNQQ&s" alt="Barcas">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTb1HeQ_tuH00jaBcNAPCjtDEDyItgQKdeNQQ&s" alt="Barcas" loading="lazy" decoding="async">
             <span>Barcas</span>
         </div>
         <div class="bento-card" onclick="switchCategory('cremes', this)">
-            <img src="https://s2-receitas.glbimg.com/fZHM_C_R40-glEZajUS4ELfARTA=/0x0:900x1600/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_1f540e0b94d8437dbbc39d567a1dee68/internal_photos/bs/2023/5/4/HnkJ6NTpikR000UtRv6Q/pudim-de-leite-com-creme-de-cupuacu-1-.jpeg" alt="Cremes">
+            <img src="https://s2-receitas.glbimg.com/fZHM_C_R40-glEZajUS4ELfARTA=/0x0:900x1600/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_1f540e0b94d8437dbbc39d567a1dee68/internal_photos/bs/2023/5/4/HnkJ6NTpikR000UtRv6Q/pudim-de-leite-com-creme-de-cupuacu-1-.jpeg" alt="Cremes" loading="lazy" decoding="async">
             <span>Cremes</span>
         </div>
     </nav>
@@ -580,12 +579,21 @@
         </div>
     </div>
 
-    <!-- Lógica de Interface e API WhatsApp Unificada e Funcional -->
+    <!-- Lógica de Interface e API WhatsApp Unificada -->
     <script>
         const WHATSAPP = "5538988276722"; 
         const TAXA = 4.00;
         let cart = [];
         let basePrice = 0; let prodName = "";
+
+        // Cache de elementos do DOM para melhor performance
+        const elCartCount = document.getElementById('cart-count');
+        const elFabCount = document.getElementById('fab-count');
+        const elFabCart = document.getElementById('fab-cart');
+        const elCartContent = document.getElementById('cart-content');
+        const elCartEmpty = document.getElementById('cart-empty');
+        const elCartFooter = document.getElementById('cart-footer');
+        const elCartSubtotal = document.getElementById('cart-subtotal');
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -633,10 +641,9 @@
         }
 
         function animateFab() {
-            const fab = document.getElementById('fab-cart');
-            fab.classList.remove('pop');
-            void fab.offsetWidth; 
-            fab.classList.add('pop');
+            elFabCart.classList.remove('pop');
+            void elFabCart.offsetWidth; 
+            elFabCart.classList.add('pop');
         }
 
         function addConfiguredProduct() {
@@ -659,23 +666,21 @@
 
         function updateCart() {
             const count = cart.reduce((s, i) => s + i.qty, 0);
-            document.getElementById('cart-count').innerText = count;
-            document.getElementById('fab-count').innerText = count;
+            elCartCount.innerText = count;
+            elFabCount.innerText = count;
             
-            const fab = document.getElementById('fab-cart');
-            if(count > 0) { fab.classList.add('visible'); } else { fab.classList.remove('visible'); }
+            if(count > 0) { elFabCart.classList.add('visible'); } else { elFabCart.classList.remove('visible'); }
             
-            const cont = document.getElementById('cart-content');
             if(cart.length === 0) {
-                cont.innerHTML = '';
-                document.getElementById('cart-empty').style.display = 'block';
-                document.getElementById('cart-footer').style.display = 'none';
+                elCartContent.innerHTML = '';
+                elCartEmpty.style.display = 'block';
+                elCartFooter.style.display = 'none';
                 return;
             }
 
-            document.getElementById('cart-empty').style.display = 'none';
-            document.getElementById('cart-footer').style.display = 'block';
-            cont.innerHTML = '';
+            elCartEmpty.style.display = 'none';
+            elCartFooter.style.display = 'block';
+            elCartContent.innerHTML = '';
             let sub = 0;
 
             cart.forEach((i, idx) => {
@@ -692,9 +697,9 @@
                         </div>
                     </div>
                 </div>`;
-                cont.insertAdjacentHTML('beforeend', html);
+                elCartContent.insertAdjacentHTML('beforeend', html);
             });
-            document.getElementById('cart-subtotal').innerText = `R$ ${sub.toFixed(2).replace('.',',')}`;
+            elCartSubtotal.innerText = `R$ ${sub.toFixed(2).replace('.',',')}`;
         }
 
         function chgQty(i, d) { cart[i].qty += d; if(cart[i].qty <= 0) cart.splice(i, 1); updateCart(); }
@@ -769,7 +774,7 @@
         }
     </script>
 
-    <!-- Lógica do THREE.JS SEM Shader de Vidro -->
+    <!-- Lógica do THREE.JS Otimizada e Limpa -->
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -784,28 +789,12 @@
         camera.position.set(0, 1.5, 3.5);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        // OTIMIZAÇÃO DE GPU: Limita a resolução no máximo ao dobro do normal, evitando superaquecimento em iPhones/Mobiles
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(container.clientWidth, container.clientHeight);
-        // Exposição ligeiramente mais alta já que tiramos o shader reflexivo
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.3;
         container.appendChild(renderer.domElement);
-
-        // ILUMINAÇÃO "MEIO ROXA" SEM AFETAR DEMAIS AS CORES
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-        scene.add(ambientLight);
-
-        const purpleLight1 = new THREE.DirectionalLight(0x8A2BE2, 2.5); 
-        purpleLight1.position.set(2, 3, 2);
-        scene.add(purpleLight1);
-
-        const purpleLight2 = new THREE.PointLight(0x9d4edd, 3, 10);
-        purpleLight2.position.set(-2, 1, -2);
-        scene.add(purpleLight2);
-
-        const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        fillLight.position.set(0, 2, 5);
-        scene.add(fillLight);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -826,7 +815,6 @@
 
         const loader = new GLTFLoader();
         
-        // Uso da função onProgress para porcentagem
         loader.load(
             './acai_bowl.glb', 
             function (gltf) {
@@ -848,7 +836,7 @@
                 // INCLINAÇÃO
                 model.rotation.z = 22.5 * (Math.PI / 180);
 
-                // Força o material a ficar sem reflexos intensos/ambientais
+                // Remove reflexos ambientais intensos
                 model.traverse((node) => {
                     if (node.isMesh && node.material) {
                         node.material.roughness = 1.0; 
@@ -861,6 +849,7 @@
                 scene.add(model);
             },
             function (xhr) {
+                // Barra de progresso para conexões lentas
                 if (xhr.lengthComputable && loadingText) {
                     const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
                     loadingText.innerText = "Preparando 3D... " + percentComplete + "%";
