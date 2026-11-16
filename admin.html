@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo | Açaí Premium</title>
+
+    <!-- Google Fonts: Merienda + Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Phosphor Icons -->
+    <script defer src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Supabase SDK + Configuração -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
+
+    <style>
+        :root {
+            --purple-deep: #290e36;
+            --purple-mid: #431657;
+            --purple-light: #5e2278;
+            --lime-bright: #c5e01b;
+            --lime-mid: #9ec418;
+            --lime-dark: #4b6604;
+            --berry-red: #d62828;
+            --cream-white: #fdfaf6;
+            --bg-panel: #f4eff8;
+            --card-border: #e2d6ec;
+            --text-dark: #290e36;
+            --text-muted: #6c5678;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-panel);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        /* ==========================================================================
+           TELA DE LOGIN
+           ========================================================================== */
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: radial-gradient(circle at 50% 30%, #5c2078 0%, #290e36 75%);
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--cream-white);
+            border: 3px solid var(--lime-bright);
+            border-radius: 24px;
+            padding: 32px 26px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+            text-align: center;
+        }
+
+        .login-logo {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 3px solid var(--purple-mid);
+            margin: 0 auto 12px auto;
+            overflow: hidden;
+            background: var(--purple-deep);
+        }
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .login-card h1 {
+            font-family: 'Merienda', cursive;
+            font-size: 24px;
+            color: var(--purple-deep);
+            margin-bottom: 4px;
+        }
+        .login-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 22px;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--purple-mid);
+            margin-bottom: 5px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            border: 2px solid #dcd0e6;
+            background: #f7f3fa;
+            font-family: inherit;
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--text-dark);
+            outline: none;
+            transition: 0.2s;
+        }
+        .input-field:focus {
+            border-color: var(--purple-mid);
+            background: #fff;
+        }
+
+        .btn-primary {
+            width: 100%;
+            height: 48px;
+            border-radius: 100px;
+            border: 2px solid #d8f032;
+            background: linear-gradient(180deg, var(--lime-bright) 0%, var(--lime-mid) 100%);
+            color: var(--purple-deep);
+            font-family: 'Merienda', cursive;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 6px 16px rgba(158, 196, 24, 0.35);
+            transition: 0.2s;
+            margin-top: 6px;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            background: #ffe3e3;
+            color: #b01212;
+            border: 1px solid #f5a3a3;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        /* ==========================================================================
+           CABEÇALHO E ESTRUTURA DO PAINEL ADMIN
+           ========================================================================== */
+        #admin-view {
+            display: none;
+            padding-bottom: 60px;
+        }
+
+        .admin-header {
+            background: linear-gradient(180deg, #3b134c 0%, #270b33 100%);
+            border-bottom: 3px solid var(--lime-bright);
+            color: #fff;
+            padding: 14px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+        }
+        .admin-header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-box img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--lime-bright);
+            object-fit: cover;
+        }
+        .brand-box h2 {
+            font-family: 'Merienda', cursive;
+            font-size: 19px;
+            color: var(--cream-white);
+            line-height: 1.1;
+        }
+        .realtime-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--lime-bright);
+            margin-top: 2px;
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--lime-bright);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--lime-bright);
+            animation: pulse 1.6s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.65; }
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-header {
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 100px;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-header:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .btn-header.sound-active {
+            background: rgba(197, 224, 27, 0.2);
+            border-color: var(--lime-bright);
+            color: var(--lime-bright);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 22px auto;
+            padding: 0 20px;
+        }
+
+        /* ==========================================================================
+           RESUMO / KPI CARDS
+           ========================================================================== */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: #fff;
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(41, 14, 54, 0.05);
+        }
+        .kpi-info span {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 4px;
+        }
+        .kpi-info strong {
+            font-family: 'Merienda', cursive;
+            font-size: 24px;
+            color: var(--purple-deep);
+        }
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: #f3ecf8;
+            color: var(--purple-mid);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* ==========================================================================
+           BARRA DE FILTROS (DATA, BUSCA E STATUS)
+           ========================================================================== */
+        .filters-bar {
+            background: #fff;
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(41, 14, 54, 0.05);
+        }
+        .filters-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .date-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .date-filter-group label {
+            font-weight: 800;
+            font-size: 13.5px;
+            color: var(--purple-deep);
+        }
+        .input-compact {
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 2px solid #dcd0e6;
+            background: #f8f4fc;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--purple-deep);
+            outline: none;
+        }
+        .btn-chip {
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: 2px solid #dcd0e6;
+            background: #f8f4fc;
+            color: var(--purple-deep);
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-chip:hover, .btn-chip.active {
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            border-color: var(--purple-deep);
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+            max-width: 360px;
+        }
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 17px;
+        }
+        .search-box input {
+            width: 100%;
+            padding-left: 36px;
+        }
+
+        .status-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .status-tab {
+            padding: 8px 14px;
+            border-radius: 100px;
+            border: 2px solid #e2d6ec;
+            background: #f8f4fc;
+            color: var(--text-dark);
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .status-tab .count-pill {
+            background: rgba(41, 14, 54, 0.12);
+            padding: 1px 7px;
+            border-radius: 100px;
+            font-size: 11.5px;
+        }
+        .status-tab.active {
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            border-color: var(--purple-deep);
+        }
+        .status-tab.active .count-pill {
+            background: var(--lime-bright);
+            color: var(--purple-deep);
+        }
+
+        /* ==========================================================================
+           LISTA E CARDS DE PEDIDOS
+           ========================================================================== */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 18px;
+        }
+
+        .order-card {
+            background: #fff;
+            border: 2px solid var(--card-border);
+            border-radius: 20px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 8px 22px rgba(41, 14, 54, 0.07);
+            transition: 0.25s;
+            position: relative;
+        }
+        .order-card.status-Novo {
+            border-color: #f59e0b;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.18);
+            animation: highlightNew 1s ease;
+        }
+        @keyframes highlightNew {
+            0% { transform: scale(0.97); background: #fffbeb; }
+            100% { transform: scale(1); background: #fff; }
+        }
+
+        .order-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            border-bottom: 1.5px dashed #e5d9ef;
+            padding-bottom: 12px;
+        }
+        .order-code {
+            font-family: 'Merienda', cursive;
+            font-size: 18px;
+            color: var(--purple-deep);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .order-time {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* Badges de Status */
+        .badge-status {
+            padding: 5px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .badge-Novo { background: #fef3c7; color: #b45309; border: 1px solid #f59e0b; }
+        .badge-Em-preparo { background: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
+        .badge-Saiu-para-entrega { background: #f3e8ff; color: #6d28d9; border: 1px solid #a855f7; }
+        .badge-Pronto { background: #dcfce7; color: #15803d; border: 1px solid #4ade80; }
+        .badge-Concluido { background: #eef7c8; color: #3f6212; border: 1px solid #a3e635; }
+        .badge-Cancelado { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+
+        /* Bloco do Cliente e Endereço */
+        .customer-box {
+            background: #f8f4fc;
+            border: 1.5px solid #e9dff2;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13.5px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .customer-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.35;
+        }
+        .customer-row i {
+            color: var(--purple-mid);
+            font-size: 16px;
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+        .delivery-tag {
+            display: inline-block;
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+        }
+
+        /* Lista de Itens do Pedido */
+        .items-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .item-entry {
+            background: #fff;
+            border: 1.5px solid #ede4f5;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .item-entry-top {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--purple-deep);
+        }
+        .item-entry-addons {
+            font-size: 12.5px;
+            color: #4b6604;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+        .item-entry-obs {
+            font-size: 12.5px;
+            color: #b45309;
+            background: #fffbeb;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* Pagamento e Total */
+        .payment-box {
+            border-top: 1.5px dashed #e5d9ef;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pay-info {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .pay-info strong {
+            color: var(--purple-deep);
+            text-transform: uppercase;
+        }
+        .total-amount {
+            font-family: 'Merienda', cursive;
+            font-size: 19px;
+            color: var(--purple-deep);
+        }
+
+        /* Controles de Status e Impressão */
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 8px;
+            border-top: 1px solid #f0e8f7;
+        }
+        .status-control-row {
+            display: flex;
+            gap: 8px;
+        }
+        .select-status {
+            flex: 1;
+            height: 40px;
+            padding: 0 10px;
+            border-radius: 10px;
+            border: 2px solid #d5c5e3;
+            background: #f8f4fc;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--purple-deep);
+            cursor: pointer;
+        }
+        .btn-next-step {
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: none;
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        .btn-next-step:hover {
+            background: var(--purple-mid);
+        }
+
+        .btn-print {
+            width: 100%;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid var(--purple-mid);
+            background: #f5effa;
+            color: var(--purple-mid);
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 13.5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-print:hover {
+            background: var(--purple-mid);
+            color: #fff;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            background: #fff;
+            border: 2px dashed var(--card-border);
+            border-radius: 20px;
+            padding: 48px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Toast de Novo Pedido */
+        .toast-new-order {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            border: 3px solid var(--lime-bright);
+            padding: 14px 22px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            transform: translateY(120%);
+            opacity: 0;
+            transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast-new-order.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ==========================================================================
+           ESTILO DE IMPRESSÃO DE COMANDA (TÉRMICA 80MM / FOLHA COMUM)
+           ========================================================================== */
+        #print-ticket {
+            display: none;
+        }
+
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+            #login-view,
+            #admin-view,
+            #toast-alert {
+                display: none !important;
+            }
+            #print-ticket {
+                display: block !important;
+                width: 100%;
+                max-width: 300px; /* Ideal para bobina 80mm/58mm */
+                margin: 0 auto;
+                padding: 6px 0;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 12.5px;
+                line-height: 1.35;
+                color: #000;
+            }
+            .ticket-center {
+                text-align: center;
+            }
+            .ticket-divider {
+                border-top: 1px dashed #000;
+                margin: 8px 0;
+            }
+            .ticket-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .ticket-item {
+                margin-bottom: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOAST DE ALERTA EM TEMPO REAL -->
+    <div id="toast-alert" class="toast-new-order">
+        <i class="ph-fill ph-bell-ringing" style="font-size: 24px;"></i>
+        <span id="toast-alert-text">Novo pedido recebido!</span>
+    </div>
+
+    <!-- ========================================================================
+         1. TELA DE LOGIN (ACESSO RESTRITO À AÇAITERIA)
+         ======================================================================== -->
+    <section id="login-view" class="login-wrapper">
+        <div class="login-card">
+            <div class="login-logo">
+                <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" alt="Logo Açaí Premium">
+            </div>
+            <h1>Painel Açaí Premium</h1>
+            <p>Acesso exclusivo para gerenciamento de pedidos</p>
+
+            <div id="login-error" class="error-msg"></div>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="admin-email">E-mail da Açaiteria</label>
+                    <input type="email" id="admin-email" class="input-field" placeholder="admin@acaipremium.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-pass">Senha</label>
+                    <input type="password" id="admin-pass" class="input-field" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="btn-login" class="btn-primary">
+                    <i class="ph-bold ph-sign-in"></i>
+                    <span>Entrar no Painel</span>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- ========================================================================
+         2. PAINEL DE PEDIDOS EM TEMPO REAL
+         ======================================================================== -->
+    <div id="admin-view">
+        <header class="admin-header">
+            <div class="admin-header-inner">
+                <div class="brand-box">
+                    <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" alt="Logo">
+                    <div>
+                        <h2>Açaí Premium • Pedidos</h2>
+                        <div class="realtime-badge">
+                            <span class="pulse-dot"></span>
+                            <span id="realtime-status-text">Conectado em Tempo Real</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <button type="button" id="btn-sound" class="btn-header sound-active" onclick="testAndUnlockSound()">
+                        <i class="ph-fill ph-speaker-high"></i>
+                        <span>Testar Som</span>
+                    </button>
+                    <button type="button" class="btn-header" onclick="loadOrders()">
+                        <i class="ph-bold ph-arrows-clockwise"></i>
+                        <span>Atualizar</span>
+                    </button>
+                    <button type="button" class="btn-header" onclick="handleLogout()">
+                        <i class="ph-bold ph-sign-out"></i>
+                        <span>Sair</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <!-- Resumo do Dia -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-info">
+                        <span>Pedidos no Filtro</span>
+                        <strong id="kpi-total-count">0</strong>
+                    </div>
+                    <div class="kpi-icon"><i class="ph-fill ph-receipt"></i></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-info">
+                        <span>Novos / Em Preparo</span>
+                        <strong id="kpi-pending-count">0</strong>
+                    </div>
+                    <div class="kpi-icon" style="background:#fef3c7; color:#b45309;"><i class="ph-fill ph-fire"></i></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-info">
+                        <span>Total Vendido (Válidos)</span>
+                        <strong id="kpi-revenue">R$ 0,00</strong>
+                    </div>
+                    <div class="kpi-icon" style="background:#eef7c8; color:#4b6604;"><i class="ph-fill ph-currency-circle-dollar"></i></div>
+                </div>
+            </div>
+
+            <!-- Barra de Filtros -->
+            <section class="filters-bar">
+                <div class="filters-top">
+                    <div class="date-filter-group">
+                        <label for="filter-date"><i class="ph-bold ph-calendar-blank"></i> Data:</label>
+                        <input type="date" id="filter-date" class="input-compact" onchange="onDateInputChange()">
+                        <button type="button" id="btn-today" class="btn-chip active" onclick="setTodayFilter()">Hoje</button>
+                        <button type="button" id="btn-all-dates" class="btn-chip" onclick="setAllDatesFilter()">Todas as Datas</button>
+                    </div>
+
+                    <div class="search-box">
+                        <i class="ph-bold ph-magnifying-glass"></i>
+                        <input type="text" id="filter-search" class="input-compact" placeholder="Buscar cliente, telefone ou #código..." oninput="renderOrders()">
+                    </div>
+                </div>
+
+                <!-- Abas de Status -->
+                <div class="status-tabs" id="status-tabs">
+                    <!-- Renderizado via JS -->
+                </div>
+            </section>
+
+            <!-- Grade de Pedidos -->
+            <section id="orders-container" class="orders-grid">
+                <!-- Renderizado via JS -->
+            </section>
+        </main>
+    </div>
+
+    <!-- ========================================================================
+         3. ÁREA OCULTA DE IMPRESSÃO DE COMANDA (@media print)
+         ======================================================================== -->
+    <div id="print-ticket"></div>
+
+    <!-- ========================================================================
+         LÓGICA DO PAINEL ADMINISTRATIVO
+         ======================================================================== -->
+    <script>
+        const SUPABASE_URL = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://asqmxzuykvtbsvrfmjgk.supabase.co";
+        const SUPABASE_ANON_KEY = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_qG8DoJtNj-5PQ-Gjg1ypzQ_NJ4b6lUa";
+
+        const supabaseClient = (window.supabase && SUPABASE_URL.startsWith("http"))
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
+
+        const STATUS_LIST = [
+            "Todos",
+            "Novo",
+            "Em preparo",
+            "Saiu para entrega",
+            "Pronto",
+            "Concluído",
+            "Cancelado"
+        ];
+
+        let allOrders = [];
+        let activeStatusFilter = "Todos";
+        let filterAllDates = false;
+        let realtimeChannel = null;
+        let audioCtx = null;
+
+        // Define a data de hoje no fuso local (YYYY-MM-DD)
+        function getLocalTodayStr() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        document.getElementById('filter-date').value = getLocalTodayStr();
+
+        // ====================================================================
+        // AVISO SONORO (WEB AUDIO API - NÃO DEPENDE DE MP3 EXTERNO)
+        // ====================================================================
+        function playNotificationChime() {
+            try {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                // Toca sequência de 3 notas alegres repetida 2x (estilo campainha de pedidos)
+                const notes = [587.33, 783.99, 1046.50, 587.33, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const startTime = audioCtx.currentTime + (idx * 0.16);
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gain.gain.setValueAtTime(0.001, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.35, startTime + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.14);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.15);
+                });
+            } catch (e) {
+                console.warn('Áudio bloqueado pelo navegador até o primeiro clique:', e);
+            }
+        }
+
+        function testAndUnlockSound() {
+            playNotificationChime();
+            showNewOrderToast("🔔 Som de alerta testado e ativo!");
+        }
+
+        function showNewOrderToast(msg) {
+            const toast = document.getElementById('toast-alert');
+            document.getElementById('toast-alert-text').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4500);
+        }
+
+        // ====================================================================
+        // AUTENTICAÇÃO (LOGIN / LOGOUT / SESSÃO)
+        // ====================================================================
+        async function initAuth() {
+            if (!supabaseClient) {
+                const errEl = document.getElementById('login-error');
+                errEl.style.display = 'block';
+                errEl.innerText = 'Configure sua SUPABASE_URL e SUPABASE_ANON_KEY no arquivo supabase-config.js.';
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                enterAdminPanel();
+            }
+
+            supabaseClient.auth.onAuthStateChange((_event, session) => {
+                if (session) {
+                    enterAdminPanel();
+                } else {
+                    exitAdminPanel();
+                }
+            });
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const errEl = document.getElementById('login-error');
+            errEl.style.display = 'none';
+
+            if (!supabaseClient) {
+                errEl.style.display = 'block';
+                errEl.innerText = 'Configure o arquivo supabase-config.js primeiro!';
+                return;
+            }
+
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-pass').value;
+            const btn = document.getElementById('btn-login');
+
+            btn.disabled = true;
+            btn.querySelector('span').innerText = 'Entrando...';
+
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+            btn.disabled = false;
+            btn.querySelector('span').innerText = 'Entrar no Painel';
+
+            if (error) {
+                errEl.style.display = 'block';
+                errEl.innerText = 'E-mail ou senha incorretos. Verifique no Supabase Auth.';
+            } else {
+                // Desbloqueia o áudio já no clique do login
+                playNotificationChime();
+            }
+        }
+
+        async function handleLogout() {
+            if (realtimeChannel && supabaseClient) {
+                supabaseClient.removeChannel(realtimeChannel);
+                realtimeChannel = null;
+            }
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            exitAdminPanel();
+        }
+
+        function enterAdminPanel() {
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('admin-view').style.display = 'block';
+            loadOrders();
+            subscribeRealtime();
+        }
+
+        function exitAdminPanel() {
+            document.getElementById('admin-view').style.display = 'none';
+            document.getElementById('login-view').style.display = 'flex';
+        }
+
+        // ====================================================================
+        // CARREGAMENTO DE PEDIDOS E REALTIME
+        // ====================================================================
+        async function loadOrders() {
+            if (!supabaseClient) return;
+
+            const { data, error } = await supabaseClient
+                .from('pedidos')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(300);
+
+            if (error) {
+                console.error('Erro ao buscar pedidos:', error);
+                return;
+            }
+
+            allOrders = data || [];
+            renderOrders();
+        }
+
+        function subscribeRealtime() {
+            if (!supabaseClient || realtimeChannel) return;
+
+            realtimeChannel = supabaseClient
+                .channel('canal-pedidos-acai')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'pedidos' },
+                    (payload) => {
+                        if (payload.eventType === 'INSERT') {
+                            const novo = payload.new;
+                            const jaExiste = allOrders.some(o => o.id === novo.id);
+                            if (!jaExiste) {
+                                allOrders.unshift(novo);
+                                playNotificationChime();
+                                showNewOrderToast(`🔔 Novo pedido #${novo.codigo_pedido} de ${novo.cliente_nome}!`);
+                            }
+                        } else if (payload.eventType === 'UPDATE') {
+                            const atualizado = payload.new;
+                            const idx = allOrders.findIndex(o => o.id === atualizado.id);
+                            if (idx !== -1) {
+                                allOrders[idx] = atualizado;
+                            } else {
+                                allOrders.unshift(atualizado);
+                            }
+                        } else if (payload.eventType === 'DELETE') {
+                            allOrders = allOrders.filter(o => o.id !== payload.old.id);
+                        }
+                        renderOrders();
+                    }
+                )
+                .subscribe((status) => {
+                    const elStatus = document.getElementById('realtime-status-text');
+                    if (status === 'SUBSCRIBED') {
+                        elStatus.innerText = 'Conectado em Tempo Real';
+                    } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                        elStatus.innerText = 'Reconectando tempo real...';
+                    }
+                });
+        }
+
+        // ====================================================================
+        // FILTROS E RENDERIZAÇÃO
+        // ====================================================================
+        function setTodayFilter() {
+            filterAllDates = false;
+            document.getElementById('filter-date').value = getLocalTodayStr();
+            document.getElementById('btn-today').classList.add('active');
+            document.getElementById('btn-all-dates').classList.remove('active');
+            renderOrders();
+        }
+
+        function setAllDatesFilter() {
+            filterAllDates = true;
+            document.getElementById('btn-all-dates').classList.add('active');
+            document.getElementById('btn-today').classList.remove('active');
+            renderOrders();
+        }
+
+        function onDateInputChange() {
+            filterAllDates = false;
+            const selected = document.getElementById('filter-date').value;
+            document.getElementById('btn-today').classList.toggle('active', selected === getLocalTodayStr());
+            document.getElementById('btn-all-dates').classList.remove('active');
+            renderOrders();
+        }
+
+        function setStatusFilter(status) {
+            activeStatusFilter = status;
+            renderOrders();
+        }
+
+        function getOrderLocalDateStr(isoStr) {
+            const d = new Date(isoStr);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function formatDateTimeBR(isoStr) {
+            const d = new Date(isoStr);
+            return d.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatMoney(val) {
+            return `R$ ${Number(val || 0).toFixed(2).replace('.', ',')}`;
+        }
+
+        function getNextStatusSuggestion(order) {
+            if (order.status === 'Novo') return 'Em preparo';
+            if (order.status === 'Em preparo') {
+                return order.tipo_entrega === 'entrega' ? 'Saiu para entrega' : 'Pronto';
+            }
+            if (order.status === 'Saiu para entrega' || order.status === 'Pronto') return 'Concluído';
+            return null;
+        }
+
+        function getStatusBadgeClass(status) {
+            const map = {
+                'Novo': 'badge-Novo',
+                'Em preparo': 'badge-Em-preparo',
+                'Saiu para entrega': 'badge-Saiu-para-entrega',
+                'Pronto': 'badge-Pronto',
+                'Concluído': 'badge-Concluido',
+                'Cancelado': 'badge-Cancelado'
+            };
+            return map[status] || 'badge-Novo';
+        }
+
+        function renderOrders() {
+            const selectedDate = document.getElementById('filter-date').value;
+            const searchQuery = document.getElementById('filter-search').value.trim().toLowerCase();
+
+            // 1. Filtra por data e busca primeiro (para alimentar os contadores das abas de status)
+            const dateAndSearchFiltered = allOrders.filter(o => {
+                if (!filterAllDates && selectedDate) {
+                    if (getOrderLocalDateStr(o.created_at) !== selectedDate) return false;
+                }
+                if (searchQuery) {
+                    const str = `${o.codigo_pedido || ''} ${o.cliente_nome || ''} ${o.cliente_telefone || ''}`.toLowerCase();
+                    if (!str.includes(searchQuery)) return false;
+                }
+                return true;
+            });
+
+            // Atualiza KPIs
+            const pendingCount = dateAndSearchFiltered.filter(o => o.status === 'Novo' || o.status === 'Em preparo').length;
+            const validRevenue = dateAndSearchFiltered
+                .filter(o => o.status !== 'Cancelado')
+                .reduce((sum, o) => sum + Number(o.valor_total || 0), 0);
+
+            document.getElementById('kpi-total-count').innerText = dateAndSearchFiltered.length;
+            document.getElementById('kpi-pending-count').innerText = pendingCount;
+            document.getElementById('kpi-revenue').innerText = formatMoney(validRevenue);
+
+            // Renderiza abas de status com contadores
+            const tabsEl = document.getElementById('status-tabs');
+            tabsEl.innerHTML = STATUS_LIST.map(st => {
+                const count = st === 'Todos'
+                    ? dateAndSearchFiltered.length
+                    : dateAndSearchFiltered.filter(o => o.status === st).length;
+                const activeClass = activeStatusFilter === st ? 'active' : '';
+                return `
+                    <button type="button" class="status-tab ${activeClass}" onclick="setStatusFilter('${st}')">
+                        <span>${st}</span>
+                        <span class="count-pill">${count}</span>
+                    </button>
+                `;
+            }).join('');
+
+            // 2. Filtra pelo Status selecionado
+            const finalOrders = activeStatusFilter === 'Todos'
+                ? dateAndSearchFiltered
+                : dateAndSearchFiltered.filter(o => o.status === activeStatusFilter);
+
+            const container = document.getElementById('orders-container');
+
+            if (finalOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="ph-duotone ph-Tray" style="font-size: 48px; color: var(--purple-mid); margin-bottom: 8px;"></i>
+                        <h3 style="font-family: 'Merienda', cursive; color: var(--purple-deep); margin-bottom: 4px;">Nenhum pedido encontrado</h3>
+                        <p>Novos pedidos aparecerão aqui automaticamente com alerta sonoro.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const payLabels = { pix: 'PIX', cartao: 'Cartão', dinheiro: 'Dinheiro' };
+
+            container.innerHTML = finalOrders.map(order => {
+                const itens = Array.isArray(order.itens) ? order.itens : [];
+                const nextStep = getNextStatusSuggestion(order);
+
+                const itensHtml = itens.map(item => `
+                    <div class="item-entry">
+                        <div class="item-entry-top">
+                            <span>${item.qty}x ${escapeHtml(item.name)} ${item.size ? `(${escapeHtml(item.size)})` : ''}</span>
+                            <span>${formatMoney(Number(item.unitPrice || 0) * Number(item.qty || 1))}</span>
+                        </div>
+                        ${item.addons && item.addons.length ? `<div class="item-entry-addons">+ ${escapeHtml(item.addons.join(', '))}</div>` : ''}
+                        ${item.obs ? `<div class="item-entry-obs">📝 Obs: ${escapeHtml(item.obs)}</div>` : ''}
+                    </div>
+                `).join('');
+
+                const statusOptionsHtml = STATUS_LIST.slice(1).map(st => `
+                    <option value="${st}" ${order.status === st ? 'selected' : ''}>${st}</option>
+                `).join('');
+
+                return `
+                    <article class="order-card status-${order.status.replace(/\s+/g, '-')}">
+                        <div class="order-head">
+                            <div>
+                                <div class="order-code">
+                                    <span>#${escapeHtml(order.codigo_pedido || String(order.id))}</span>
+                                    <span class="delivery-tag">${order.tipo_entrega === 'entrega' ? '🛵 Entrega' : '🏪 Retirada'}</span>
+                                </div>
+                                <div class="order-time">🕒 ${formatDateTimeBR(order.created_at)}</div>
+                            </div>
+                            <span class="badge-status ${getStatusBadgeClass(order.status)}">${escapeHtml(order.status)}</span>
+                        </div>
+
+                        <div class="customer-box">
+                            <div class="customer-row">
+                                <i class="ph-fill ph-user"></i>
+                                <strong>${escapeHtml(order.cliente_nome)}</strong>
+                            </div>
+                            <div class="customer-row">
+                                <i class="ph-fill ph-phone"></i>
+                                <span>${escapeHtml(order.cliente_telefone)}</span>
+                            </div>
+                            <div class="customer-row">
+                                <i class="ph-fill ph-map-pin"></i>
+                                <span>${escapeHtml(order.endereco || 'Retirada na Loja')}</span>
+                            </div>
+                        </div>
+
+                        <div class="items-box">
+                            ${itensHtml}
+                        </div>
+
+                        <div class="payment-box">
+                            <div class="pay-info">
+                                Pagamento: <strong>${payLabels[order.forma_pagamento] || escapeHtml(order.forma_pagamento)}</strong>
+                                ${order.troco_para ? `<br><span style="color:#b45309;">💵 Troco para: ${escapeHtml(order.troco_para)}</span>` : ''}
+                                ${Number(order.taxa_entrega) > 0 ? `<br><small>Taxa entrega: ${formatMoney(order.taxa_entrega)}</small>` : ''}
+                            </div>
+                            <div class="total-amount">${formatMoney(order.valor_total)}</div>
+                        </div>
+
+                        <div class="card-actions">
+                            <div class="status-control-row">
+                                <select class="select-status" onchange="updateOrderStatus(${order.id}, this.value)">
+                                    ${statusOptionsHtml}
+                                </select>
+                                ${nextStep ? `
+                                    <button type="button" class="btn-next-step" onclick="updateOrderStatus(${order.id}, '${nextStep}')">
+                                        <span>Avançar: ${nextStep}</span>
+                                        <i class="ph-bold ph-arrow-right"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            <button type="button" class="btn-print" onclick="printOrderTicket(${order.id})">
+                                <i class="ph-bold ph-printer"></i>
+                                <span>Imprimir Comanda</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        // ====================================================================
+        // ATUALIZAÇÃO DE STATUS NO BANCO
+        // ====================================================================
+        async function updateOrderStatus(orderId, newStatus) {
+            if (!supabaseClient) return;
+
+            // Atualização otimista na tela
+            const idx = allOrders.findIndex(o => o.id === orderId);
+            if (idx !== -1) {
+                allOrders[idx].status = newStatus;
+                renderOrders();
+            }
+
+            const { error } = await supabaseClient
+                .from('pedidos')
+                .update({ status: newStatus })
+                .eq('id', orderId);
+
+            if (error) {
+                alert('Erro ao atualizar o status do pedido.');
+                console.error(error);
+                loadOrders();
+            }
+        }
+
+        // ====================================================================
+        // IMPRESSÃO DE COMANDA
+        // ====================================================================
+        function printOrderTicket(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const payLabels = { pix: 'PIX', cartao: 'CARTAO', dinheiro: 'DINHEIRO' };
+            const itens = Array.isArray(order.itens) ? order.itens : [];
+
+            const itensPrintHtml = itens.map(item => `
+                <div class="ticket-item">
+                    <div class="ticket-row">
+                        <strong>${item.qty}x ${escapeHtml(item.name)} ${item.size ? `(${escapeHtml(item.size)})` : ''}</strong>
+                        <span>${formatMoney(Number(item.unitPrice || 0) * Number(item.qty || 1))}</span>
+                    </div>
+                    ${item.addons && item.addons.length ? `<div>  + ${escapeHtml(item.addons.join(', '))}</div>` : ''}
+                    ${item.obs ? `<div>  * Obs: ${escapeHtml(item.obs)}</div>` : ''}
+                </div>
+            `).join('');
+
+            const ticketEl = document.getElementById('print-ticket');
+            ticketEl.innerHTML = `
+                <div class="ticket-center">
+                    <strong style="font-size: 16px;">AÇAÍ PREMIUM</strong><br>
+                    <span>COMANDA DE PEDIDO #${escapeHtml(order.codigo_pedido || String(order.id))}</span><br>
+                    <span>${formatDateTimeBR(order.created_at)}</span>
+                </div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-center">
+                    <strong style="font-size: 14px;">*** ${order.tipo_entrega === 'entrega' ? 'ENTREGA EM DOMICILIO' : 'RETIRAR NA LOJA'} ***</strong>
+                </div>
+                <div class="ticket-divider"></div>
+                <div>
+                    <strong>Cliente:</strong> ${escapeHtml(order.cliente_nome)}<br>
+                    <strong>Fone:</strong> ${escapeHtml(order.cliente_telefone)}<br>
+                    <strong>Local:</strong> ${escapeHtml(order.endereco || 'Retirada na Loja')}
+                </div>
+                <div class="ticket-divider"></div>
+                <div><strong>ITENS DO PEDIDO:</strong></div>
+                <div style="margin-top: 4px;">
+                    ${itensPrintHtml}
+                </div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-row">
+                    <span>Subtotal:</span>
+                    <span>${formatMoney(order.subtotal)}</span>
+                </div>
+                <div class="ticket-row">
+                    <span>Taxa Entrega:</span>
+                    <span>${formatMoney(order.taxa_entrega)}</span>
+                </div>
+                <div class="ticket-row" style="font-size: 15px; font-weight: bold; margin-top: 4px;">
+                    <span>TOTAL:</span>
+                    <span>${formatMoney(order.valor_total)}</span>
+                </div>
+                <div class="ticket-divider"></div>
+                <div>
+                    <strong>Pagamento:</strong> ${payLabels[order.forma_pagamento] || escapeHtml(order.forma_pagamento)}<br>
+                    ${order.troco_para ? `<strong>Troco para:</strong> ${escapeHtml(order.troco_para)}<br>` : ''}
+                </div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-center" style="margin-top: 8px;">
+                    Obrigado pela preferência!
+                </div>
+            `;
+
+            window.print();
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>

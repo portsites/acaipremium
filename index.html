@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Açaí Premium | Pedido Digital</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Açaí Premium | Sabor Natural da Amazônia</title>
     
-    <!-- 1. OTIMIZAÇÃO: Pré-conexão com servidores externos para acelerar o download -->
+    <!-- 1. OTIMIZAÇÃO: Pré-conexão com servidores externos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://unpkg.com">
@@ -13,11 +13,15 @@
     <!-- 2. OTIMIZAÇÃO: Pré-carregamento do 3D -->
     <link rel="preload" href="./acai_bowl.glb" as="fetch" crossorigin="anonymous">
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Merienda (Orgânica/Artesanal) + Nunito (Leitura limpa) -->
+    <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@700;800&family=Nunito:ital,wght@0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
     
-    <!-- 3. OTIMIZAÇÃO: O 'defer' impede que o script bloqueie a renderização do site -->
+    <!-- 3. OTIMIZAÇÃO: Phosphor Icons -->
     <script defer src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- 4. SUPABASE SDK + CONFIGURAÇÃO DO PROJETO -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
 
     <!-- Mapa de Importação para o Three.js -->
     <script type="importmap">
@@ -31,109 +35,251 @@
 
     <style>
         :root {
-            --bg-base: #050208; 
-            --surface-card: rgba(255, 255, 255, 0.03); 
-            --surface-hover: rgba(255, 255, 255, 0.08); 
-            --surface-border: rgba(255, 255, 255, 0.08);
+            --purple-deep: #290e36;
+            --purple-mid: #431657;
+            --purple-light: #5e2278;
+            --purple-shelf: #4b1863;
             
-            --primary: #9d4edd; 
-            --primary-glow: rgba(157, 78, 221, 0.4);
-            --accent: #F4B41A; 
-            --green-leaf: #00b92b; 
+            --lime-bright: #c5e01b;
+            --lime-mid: #9ec418;
+            --lime-dark: #6e8f0b;
             
-            --text-main: #FDFBFF; 
-            --text-muted: #AFA8BA; 
-            --danger: #ff4d4d;
+            --berry-red: #d62828;
+            --berry-red-dark: #a81c1c;
             
-            --radius-lg: 20px;
+            --cream-white: #fdfaf6;
+            --text-light: #f7f2fa;
+            --text-purple-muted: #cbb5d6;
+            
+            --radius-xl: 24px;
+            --radius-lg: 16px;
             --radius-md: 12px;
-            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --transition: all 0.25s ease;
+            --max-w: 760px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
-            background-color: var(--bg-base);
-            background-image: 
-                linear-gradient(rgba(5, 2, 8, 0.88), rgba(5, 2, 8, 0.88)),
-                url('https://i.pinimg.com/1200x/85/7f/9a/857f9a5ece01583d358e4edacb1e50d5.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: var(--text-main);
-            font-family: 'DM Sans', sans-serif;
+            background-color: var(--purple-deep);
+            color: var(--text-light);
+            font-family: 'Nunito', sans-serif;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        .hero {
-            min-height: 85vh; 
-            display: flex; 
+        /* Padronagem Marajoara / Amazônica sutil */
+        .indigenous-pattern {
+            background-color: var(--purple-deep);
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.2' stroke-opacity='0.045'%3E%3Cpath d='M30 5 L55 30 L30 55 L5 30 Z'/%3E%3Cpath d='M30 15 L45 30 L30 45 L15 30 Z'/%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3Cpath d='M0 0 L15 15 M60 0 L45 15 M0 60 L15 45 M60 60 L45 45'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* TOP BAR ROXA COM MEDALHÃO */
+        .top-ribbon {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(180deg, #3b134c 0%, #270b33 100%);
+            border-bottom: 2px solid #531f69;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.45);
+            padding: 10px 18px;
+        }
+        .top-ribbon-inner {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-medallion {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .medallion-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--purple-mid);
+            border: 2px solid var(--cream-white);
+            outline: 3px solid var(--purple-mid);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            padding: 2px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .medallion-circle img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .brand-titles {
+            display: flex;
             flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px;
-            text-align: center; 
-            position: relative;
+        }
+        .brand-titles strong {
+            font-family: 'Merienda', cursive;
+            font-size: 17px;
+            color: var(--cream-white);
+            letter-spacing: 0.3px;
+            line-height: 1.1;
+        }
+        .brand-titles span {
+            font-size: 12px;
+            color: var(--lime-bright);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 2px;
+        }
+        .online-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--lime-bright);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 6px var(--lime-bright);
         }
 
-        .header-top {
-            position: absolute; top: 0; left: 0; width: 100%; padding: 20px 24px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 10;
+        .bag-pill-btn {
+            background: linear-gradient(180deg, var(--lime-bright) 0%, var(--lime-mid) 100%);
+            border: 2px solid #dcf046;
+            color: var(--purple-deep);
+            height: 42px;
+            padding: 0 16px;
+            border-radius: 100px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            transition: var(--transition);
         }
-        
-        .brand { 
-            display: flex; align-items: center; gap: 12px; 
-            font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;
-            color: var(--text-main);
+        .bag-pill-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
         }
-        .brand img { width: 44px; border-radius: 50%; border: 2px solid var(--primary); background: #000; }
-        
-        .cart-trigger {
-            background: var(--surface-card); 
-            border: 1px solid var(--surface-border);
-            padding: 12px; border-radius: 50%; cursor: pointer;
-            transition: var(--transition); position: relative; color: var(--text-main);
-            backdrop-filter: blur(10px);
-        }
-        .cart-trigger:active { transform: scale(0.95); }
-        .cart-trigger:hover { background: var(--surface-hover); }
-        .cart-badge {
-            position: absolute; top: -4px; right: -4px; background: var(--accent); color: #000;
-            font-size: 12px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
+        .bag-pill-btn:active { transform: scale(0.96); }
+        .bag-counter {
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 100px;
         }
 
-        .hero-3d-container {
-            width: min(420px, 90vw);
-            height: min(420px, 55vh);
-            margin-bottom: 24px;
-            margin-top: 60px;
+        /* PALCO PRINCIPAL ROXO COM BOKEH NATURAL */
+        .hero-showcase {
             position: relative;
-            z-index: 2;
+            background: 
+                radial-gradient(circle at 20% 25%, rgba(168, 66, 209, 0.28) 0%, transparent 25%),
+                radial-gradient(circle at 80% 20%, rgba(145, 50, 184, 0.25) 0%, transparent 28%),
+                radial-gradient(circle at 50% 45%, #5c2078 0%, #321042 65%, #240a30 100%);
+            padding: 22px 16px 34px 16px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .hero-container {
+            max-width: var(--max-w);
+            margin: 0 auto;
+        }
+
+        /* BARRA DE PÍLULA VERDE-LIMÃO */
+        .lime-nav-pill {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(180deg, #d4ed24 0%, #9bc213 100%);
+            border: 2px solid #e3f752;
+            border-radius: 100px;
+            padding: 4px 6px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), inset 0 2px 2px rgba(255, 255, 255, 0.6);
+            margin-bottom: 18px;
+            max-width: 100%;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .lime-nav-pill::-webkit-scrollbar { display: none; }
+
+        .lime-tab {
+            background: transparent;
+            border: none;
+            color: var(--purple-deep);
+            font-family: 'Merienda', cursive;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 16px;
+            cursor: pointer;
+            white-space: nowrap;
+            position: relative;
+            border-radius: 100px;
+            transition: var(--transition);
+        }
+        .lime-tab:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 22%;
+            height: 56%;
+            width: 1px;
+            background: rgba(41, 14, 54, 0.25);
+        }
+        .lime-tab.active {
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+        }
+        .lime-tab.active::after { display: none; }
+
+        /* RÓTULO ENTRE COLCHETES: [ Copo 500ml ] */
+        .bracket-title {
+            font-family: 'Merienda', cursive;
+            font-size: 16px;
+            color: var(--cream-white);
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+            transition: transform 0.25s ease;
+        }
+        .bracket-title span.br-color {
+            color: var(--lime-bright);
+            font-weight: 800;
+        }
+
+        /* PALCO 3D COM SETAS REDONDAS VERDES NAS LATERAIS */
+        .stage-3d-wrapper {
+            position: relative;
+            width: min(400px, 94vw);
+            height: min(290px, 38vh);
+            margin: 0 auto 8px auto;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        
+
         .hero-bg-logo {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 120%; 
-            max-width: 650px;
-            opacity: 0.90; 
-            border-radius: 50%; 
+            width: 82%;
+            max-width: 280px;
+            opacity: 0.22;
+            border-radius: 50%;
             z-index: 0;
             pointer-events: none;
-        }
-
-        .hero-3d-container::after {
-            content: ''; position: absolute; bottom: 10%; left: 20%; right: 20%; height: 30px;
-            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); border-radius: 50%;
-            z-index: -1; filter: blur(20px); pointer-events: none;
         }
 
         #three-canvas {
@@ -142,534 +288,1915 @@
             outline: none;
             cursor: grab;
             position: relative;
-            z-index: 1; 
-            filter: drop-shadow(0px 25px 35px rgba(0, 0, 0, 0.8));
+            z-index: 2;
+            filter: drop-shadow(0px 20px 25px rgba(0, 0, 0, 0.75));
         }
         #three-canvas:active { cursor: grabbing; }
 
-        .swipe-hint {
+        .stage-arrow {
             position: absolute;
-            top: 55%;
-            left: 50%;
-            z-index: 10;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #d4ed24 0%, #8fb50e 100%);
+            border: 2px solid #e6f768;
+            color: var(--purple-deep);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.5);
+            transition: var(--transition);
+        }
+        .stage-arrow:hover { transform: translateY(-50%) scale(1.08); }
+        .stage-arrow:active { transform: translateY(-50%) scale(0.94); }
+        .stage-arrow.left { left: 0; }
+        .stage-arrow.right { right: 0; }
+
+        .swipe-caption {
+            font-size: 12px;
+            color: var(--text-purple-muted);
+            font-style: italic;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        /* Linha divisória fina dourada/verde acima da prateleira (igual à foto) */
+        .shelf-top-divider {
+            height: 1.5px;
+            max-width: 620px;
+            margin: 0 auto 18px auto;
+            background: linear-gradient(90deg, transparent 0%, rgba(197, 224, 27, 0.55) 50%, transparent 100%);
+        }
+
+        /* ==========================================================
+           PRATELEIRA DE MINIATURAS DOS TAMANHOS (ESTILO SPLIT AÇAÍ)
+           ========================================================== */
+        .shelf-showcase {
+            max-width: 660px;
+            margin: 0 auto;
+            position: relative;
+            padding: 0 6px;
+        }
+        .shelf-hint-title {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--lime-bright);
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .shelf-items-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: clamp(10px, 3vw, 24px);
+            padding: 8px 12px 0 12px;
+            position: relative;
+            z-index: 3;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .shelf-items-row::-webkit-scrollbar { display: none; }
+
+        .shelf-pot-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            color: rgba(255, 255, 255, 0.9);
-            pointer-events: none; 
-            animation: swipe-move 2s infinite ease-in-out;
-            transition: opacity 0.5s ease;
+            cursor: pointer;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+            opacity: 0.78;
+            flex-shrink: 0;
+            position: relative;
+            padding-bottom: 4px;
         }
-        .swipe-hint i.ph-hand-grabbing {
-            font-size: 42px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
-        }
-        .swipe-hint i.ph-arrows-left-right {
-            font-size: 24px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
-        }
-        .swipe-hint.hidden { opacity: 0; }
-        @keyframes swipe-move {
-            0% { transform: translate(-90%, -50%) rotate(-10deg); }
-            50% { transform: translate(-10%, -50%) rotate(10deg); }
-            100% { transform: translate(-90%, -50%) rotate(-10deg); }
+        .shelf-pot-item:hover,
+        .shelf-pot-item.active {
+            opacity: 1;
+            transform: translateY(-7px) scale(1.05);
         }
 
-        .hero h1 { 
-            font-family: 'Syne', sans-serif; font-size: clamp(40px, 8vw, 56px); 
-            line-height: 1.05; font-weight: 800; text-transform: uppercase; 
-            margin-bottom: 16px; letter-spacing: -1px; color: var(--green-leaf);
-            text-shadow: 0 4px 20px rgba(0,0,0,0.9);
-        }
-        .hero p { 
-            font-size: 16px; color: var(--text-muted); max-width: 380px; 
-            margin-bottom: 20px; font-weight: 500; line-height: 1.5;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-        }
-
-        .bento-categories {
-            display: flex; gap: 16px; padding: 0 24px 48px 24px;
-            overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory;
-            /* 4. OTIMIZAÇÃO: Suaviza o scroll na CPU */
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-        .bento-categories::-webkit-scrollbar { display: none; }
-        
-        .bento-card {
-            min-width: 150px; height: 180px; border-radius: var(--radius-lg);
-            position: relative; overflow: hidden; scroll-snap-align: start;
-            cursor: pointer; transition: var(--transition);
-            background-color: #11091a;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid var(--surface-border);
-            /* Impede re-renderizações complexas */
-            transform: translateZ(0);
-        }
-        .bento-card::before {
-            content: ''; position: absolute; inset: 0; 
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, transparent 80%); 
-            z-index: 1; transition: var(--transition);
-        }
-        .bento-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; opacity: 0.7;}
-        
-        .bento-card:hover img, .bento-card.active img { transform: scale(1.08); opacity: 1;}
-        .bento-card.active::before { background: linear-gradient(to top, rgba(157, 78, 221, 0.8) 0%, transparent 80%); }
-        .bento-card.active { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 8px 24px var(--primary-glow);}
-        
-        .bento-card span {
-            position: absolute; bottom: 16px; left: 16px; z-index: 2;
-            font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
-            letter-spacing: 0.5px; color: #fff;
+        /* Brilho sutil embaixo do potinho selecionado */
+        .shelf-pot-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            width: 80%;
+            height: 5px;
+            background: var(--lime-bright);
+            border-radius: 50%;
+            filter: blur(4px);
         }
 
-        .menu-section { display: none; padding: 0 24px 120px 24px; }
-        .menu-section.active { display: block; }
-
-        .product-item {
-            background: var(--surface-card); backdrop-filter: blur(10px);
-            border: 1px solid var(--surface-border); border-radius: var(--radius-lg);
-            padding: 24px; margin-bottom: 16px; display: flex; justify-content: space-between;
-            align-items: center; transition: var(--transition); cursor: pointer;
+        /* Desenho do Pote em CSS (fiel aos potes roxos da imagem) */
+        .mini-pot {
+            position: relative;
+            background: linear-gradient(90deg, #2d0c3d 0%, #521b6e 45%, #240830 100%);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 4px 4px 9px 9px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.65);
+            clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%);
         }
-        .product-item:active { transform: scale(0.98); }
-        .product-item:hover { background: var(--surface-hover); border-color: var(--primary); }
-        
-        .product-info h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);}
-        .product-info p { font-size: 14px; color: var(--text-muted); max-width: 260px; line-height: 1.5; font-weight: 400;}
-        
-        .product-action { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-        .product-price { font-weight: 700; color: var(--accent); font-size: 16px; letter-spacing: -0.5px;}
-        .btn-icon {
-            width: 40px; height: 40px; border-radius: 50%; background: var(--text-main); color: #000;
-            display: flex; align-items: center; justify-content: center; border: none; font-size: 20px; cursor: pointer;
-            transition: var(--transition); font-weight: bold;
+        /* Tampa do pote */
+        .mini-pot-lid {
+            width: calc(100% + 8px);
+            height: 6px;
+            background: linear-gradient(90deg, #38104a, #6b268c, #2b0b3a);
+            border-radius: 4px;
+            border-top: 1px solid rgba(255, 255, 255, 0.35);
+            border-bottom: 1.5px solid var(--lime-bright);
+            margin-bottom: -1px;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
-        .product-item:hover .btn-icon { background: var(--primary); color: #fff; transform: scale(1.1);}
-
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-
-        .fab-cart {
-            position: fixed; bottom: 24px; right: 24px; height: 60px; padding: 0 24px 0 16px;
-            background: var(--primary); color: #fff; border-radius: 100px;
-            display: flex; align-items: center; gap: 12px; box-shadow: 0 8px 24px var(--primary-glow);
-            cursor: pointer; z-index: 90; transition: var(--transition);
-            opacity: 0; pointer-events: none; transform: translateY(20px);
+        .mini-pot-lid.red-lid {
+            border-bottom-color: #ff4d4d;
         }
-        .fab-cart.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
-        .fab-cart:active { transform: scale(0.95); }
-        .fab-cart.pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        
-        .fab-icon-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
-        .fab-icon-wrapper i { font-size: 28px; }
-        .fab-badge {
-            position: absolute; top: -6px; right: -8px; background: var(--accent); color: #000;
-            font-size: 13px; font-weight: 800; width: 24px; height: 24px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg-base);
+        .mini-pot-lid.gold-lid {
+            border-bottom-color: #f59e0b;
         }
-        .fab-text { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
 
-        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
-
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
-            z-index: 1000; opacity: 0; pointer-events: none; transition: var(--transition);
+        /* Cúpula transparente (para o Especial Vulcão) */
+        .mini-pot-dome {
+            width: 86%;
+            height: 12px;
+            background: radial-gradient(circle at 40% 30%, rgba(255,255,255,0.45), rgba(255,255,255,0.12));
+            border: 1px solid rgba(255,255,255,0.4);
+            border-bottom: none;
+            border-radius: 20px 20px 0 0;
+            margin-bottom: -1px;
         }
-        .modal-overlay.active { opacity: 1; pointer-events: all; }
-        
-        .modal-drawer {
-            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 90vh;
-            background: #0D0614; border-top: 1px solid var(--surface-border); border-radius: 32px 32px 0 0;
-            padding: 32px 24px; overflow-y: auto; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 -20px 50px rgba(0,0,0,0.8);
+
+        /* Selo circular no meio do potinho */
+        .mini-pot-logo {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            background: var(--purple-deep);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: var(--cream-white);
+            margin-bottom: 4px;
         }
-        .modal-overlay.active .modal-drawer { transform: translateY(0); }
-        
-        .drawer-handle { width: 48px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 4px; margin: 0 auto 24px auto; }
-        
-        .close-x {
-            position: absolute; top: 24px; right: 24px; background: var(--surface-card); border: 1px solid var(--surface-border); color: var(--text-main);
-            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 20px; cursor: pointer; transition: var(--transition); z-index: 10;
+
+        /* Faixa colorida inferior do potinho */
+        .mini-pot-stripe {
+            width: 100%;
+            height: 7px;
+            background: var(--lime-bright);
+            font-size: 6.5px;
+            font-weight: 900;
+            color: var(--purple-deep);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.2px;
+            text-transform: uppercase;
         }
-        .close-x:hover, .close-x:active { background: rgba(255,255,255,0.1); transform: scale(1.05); }
-
-        .modal-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 24px; padding-right: 48px; letter-spacing: -0.5px; color: var(--text-main);}
-
-        .option-group { margin-bottom: 32px; }
-        .option-group h4 { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
-        .option-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--surface-border); }
-        .option-row:last-child { border-bottom: none; }
-        .option-row label { display: flex; align-items: center; gap: 14px; cursor: pointer; flex: 1; font-size: 16px; font-weight: 500;}
-        .price-tag { color: var(--accent); font-weight: 700; font-size: 15px; }
-
-        input[type="checkbox"], input[type="radio"] { appearance: none; width: 24px; height: 24px; border: 2px solid #4a4453; border-radius: 6px; cursor: pointer; position: relative; transition: var(--transition); background: rgba(255,255,255,0.05); }
-        input[type="radio"] { border-radius: 50%; }
-        input:checked { border-color: var(--primary); background: var(--primary); }
-        input[type="checkbox"]:checked::after { content: '✓'; position: absolute; color: white; font-size: 14px; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold;}
-        input[type="radio"]:checked::after { content: ''; position: absolute; width: 8px; height: 8px; background: white; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%);}
-
-        .input-glass {
-            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--surface-border); color: var(--text-main); padding: 16px 20px; border-radius: var(--radius-md);
-            font-size: 16px; outline: none; transition: var(--transition); margin-bottom: 16px; font-family: inherit;
+        .mini-pot-stripe.red-stripe {
+            background: var(--berry-red);
+            color: #fff;
         }
-        .input-glass:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); }
-        .input-glass::placeholder { color: #6E677A; }
-
-        .btn-glow {
-            width: 100%; background: var(--text-main); color: #000; border: none; padding: 20px; border-radius: 100px;
-            font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px;
-            cursor: pointer; transition: var(--transition); position: sticky; bottom: 0; margin-top: 24px;
+        .mini-pot-stripe.gold-stripe {
+            background: #f59e0b;
+            color: var(--purple-deep);
         }
-        .btn-glow:active { transform: translateY(2px); background: var(--accent); }
 
-        .cart-item { background: rgba(255,255,255,0.03); border: 1px solid var(--surface-border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
-        .cart-item-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 8px; color: var(--text-main);}
-        .cart-item-details { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;}
-        .cart-controls { display: flex; justify-content: space-between; align-items: center; }
-        .qty-box { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 100px; border: 1px solid var(--surface-border);}
-        .qty-box button { background: none; border: none; color: var(--text-main); font-size: 20px; cursor: pointer; font-weight: 600;}
-        .remove-btn { color: var(--danger); font-size: 14px; font-weight: 700; background: none; border: none; cursor: pointer;}
-        .form-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+        /* Proporções individuais de cada tamanho na prateleira */
+        .pot-300 { width: 42px; height: 42px; }
+        .pot-500 { width: 48px; height: 54px; }
+        .pot-700 { width: 52px; height: 66px; }
+        .pot-zero { width: 46px; height: 50px; }
+        .pot-vulcao { width: 48px; height: 52px; }
+        .pot-barca {
+            width: 72px;
+            height: 36px;
+            border-radius: 6px 6px 12px 12px;
+            clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+        }
+
+        .shelf-pot-label {
+            margin-top: 6px;
+            font-family: 'Merienda', cursive;
+            font-size: 11px;
+            color: var(--cream-white);
+            line-height: 1.1;
+        }
+        .shelf-pot-price {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: var(--lime-bright);
+        }
+
+        /* Base da Prateleira 3D Roxa com Sombra Projetada */
+        .shelf-3d-base {
+            position: relative;
+            height: 16px;
+            margin-top: -2px;
+            background: linear-gradient(180deg, #632082 0%, #3d1152 60%, #240830 100%);
+            border-top: 2px solid #8636ab;
+            border-bottom: 3px solid #190421;
+            border-radius: 4px;
+            box-shadow: 0 14px 24px rgba(0, 0, 0, 0.85);
+            z-index: 1;
+        }
 
         #loading-text {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            font-weight: 800;
+            font-size: 13px;
+            background: rgba(41, 14, 54, 0.9);
+            border: 2px solid var(--lime-bright);
+            padding: 8px 16px;
+            border-radius: 100px;
+            color: var(--lime-bright);
+            z-index: 4;
+            transition: opacity 0.4s ease;
+            white-space: nowrap;
+        }
+
+        /* DIVISÓRIA ONDULADA ORGÂNICA (TRANSIÇÃO ROXO -> VERDE FOLHA) */
+        .wave-divider-top {
+            display: block;
+            width: 100%;
+            height: 26px;
+            background-color: #240a30;
+            background-image: radial-gradient(circle at 18px -6px, transparent 20px, var(--lime-mid) 21px);
+            background-size: 36px 30px;
+        }
+
+        /* SEÇÃO VERDE NATUREZA */
+        .nature-green-section {
+            background: 
+                radial-gradient(circle at 50% 15%, #c5e322 0%, #99c215 65%, #7ea30d 100%);
+            color: var(--purple-deep);
+            padding: 28px 18px 42px 18px;
+            position: relative;
+            box-shadow: inset 0 10px 25px rgba(0,0,0,0.12);
+        }
+
+        .nature-container {
+            max-width: var(--max-w);
+            margin: 0 auto;
+        }
+
+        .nature-header {
+            text-align: left;
+            margin-bottom: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 2px solid rgba(41, 14, 54, 0.12);
+            padding-bottom: 12px;
+        }
+        .nature-header-titles small {
+            font-family: 'Merienda', cursive;
+            font-size: 15px;
+            color: #2d4703;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .nature-header-titles h1 {
+            font-family: 'Merienda', cursive;
+            font-size: clamp(26px, 6vw, 36px);
+            color: var(--cream-white);
+            text-shadow: 0 3px 8px rgba(41, 14, 54, 0.45);
+            line-height: 1.1;
+        }
+        .nature-header-sub {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--purple-deep);
+            background: rgba(255, 255, 255, 0.45);
+            padding: 6px 12px;
+            border-radius: 100px;
+        }
+
+        /* CARDS DE CATEGORIA VISUAIS */
+        .organic-categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 26px;
+        }
+        .organic-cat-card {
+            background: rgba(255, 255, 255, 0.55);
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            border-radius: var(--radius-lg);
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 6px 14px rgba(41, 14, 54, 0.12);
+        }
+        .organic-cat-card img {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--purple-mid);
+            transition: var(--transition);
+        }
+        .organic-cat-card span {
+            font-family: 'Merienda', cursive;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--purple-deep);
+            line-height: 1.15;
+        }
+        .organic-cat-card.active {
+            background: var(--purple-deep);
+            border-color: var(--cream-white);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(41, 14, 54, 0.35);
+        }
+        .organic-cat-card.active img {
+            border-color: var(--lime-bright);
+            transform: scale(1.06);
+        }
+        .organic-cat-card.active span {
+            color: var(--lime-bright);
+        }
+
+        /* SEÇÕES DE PRODUTOS */
+        .menu-section { display: none; }
+        .menu-section.active { display: block; }
+
+        .product-card {
+            background: var(--cream-white);
+            border: 2px solid #e9e0f0;
+            border-radius: var(--radius-xl);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 24px rgba(41, 14, 54, 0.18);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: var(--transition);
+            color: var(--purple-deep);
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--purple-mid);
+        }
+
+        .product-card-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+        }
+
+        .product-circle-img {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 3px solid var(--lime-mid);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+            background: var(--purple-deep);
+        }
+
+        .product-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .natural-tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 2px 10px;
+            border-radius: 100px;
+            background: #eef7c8;
+            color: #4b6604;
+            border: 1px solid #c5e01b;
+            margin-bottom: 5px;
+        }
+        .product-info h3 {
+            font-family: 'Merienda', cursive;
+            font-size: 18px;
+            color: var(--purple-deep);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+        .product-info p {
+            font-size: 13.5px;
+            color: #594463;
+            line-height: 1.45;
             font-weight: 600;
-            color: var(--primary);
-            z-index: 2;
-            transition: opacity 0.5s ease;
+        }
+
+        .product-card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px dashed #d5c8de;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .price-tag-box {
+            display: flex;
+            flex-direction: column;
+        }
+        .price-tag-box small {
+            font-size: 11px;
+            color: #775f82;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .price-tag-box strong {
+            font-family: 'Merienda', cursive;
+            font-size: 19px;
+            color: var(--purple-mid);
+            font-weight: 800;
+        }
+
+        .cta-buttons-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-organic-bag {
+            height: 42px;
+            padding: 0 14px;
+            border-radius: 100px;
+            background: #f2ebf7;
+            border: 2px solid var(--purple-mid);
+            color: var(--purple-mid);
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-organic-bag:hover {
+            background: var(--purple-mid);
+            color: var(--cream-white);
+        }
+        .btn-organic-bag:active { transform: scale(0.95); }
+
+        .btn-organic-direct {
+            height: 42px;
+            padding: 0 18px;
+            border-radius: 100px;
+            background: linear-gradient(180deg, var(--berry-red) 0%, var(--berry-red-dark) 100%);
+            border: 2px solid #ff7575;
+            color: #fff;
+            font-family: 'Merienda', cursive;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(214, 40, 40, 0.35);
+            transition: var(--transition);
+        }
+        .btn-organic-direct:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+        }
+        .btn-organic-direct:active { transform: scale(0.95); }
+
+        /* RODAPÉ ROXO COM PADRONAGEM AMAZÔNICA */
+        .footer-showcase {
+            padding: 40px 20px 120px 20px;
+            border-top: 4px solid #6b910b;
+            text-align: center;
+        }
+        .footer-grid {
+            max-width: var(--max-w);
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 24px;
+        }
+        .footer-col h3 {
+            font-family: 'Merienda', cursive;
+            font-size: 20px;
+            color: var(--lime-bright);
+            margin-bottom: 6px;
+        }
+        .footer-col p {
+            font-size: 13.5px;
+            color: var(--text-purple-muted);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .footer-red-pill {
+            display: inline-block;
+            background: var(--berry-red);
+            color: #fff;
+            font-family: 'Merienda', cursive;
+            font-size: 13px;
+            padding: 8px 18px;
+            border-radius: 100px;
+            text-decoration: none;
+            border: 1px solid #ff8585;
+            cursor: pointer;
+        }
+        .footer-center-seal {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: var(--purple-mid);
+            border: 3px solid var(--cream-white);
+            outline: 4px solid var(--purple-mid);
+            padding: 4px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            margin: 0 auto;
+        }
+        .footer-center-seal img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* BARRA FLUTUANTE INFERIOR */
+        .bottom-floating-bar {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(40px);
+            width: calc(100% - 28px);
+            max-width: 680px;
+            background: var(--purple-deep);
+            border: 2px solid var(--lime-bright);
+            border-radius: 100px;
+            padding: 8px 10px 8px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            z-index: 95;
+            box-shadow: 0 14px 35px rgba(0,0,0,0.75);
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+        .bottom-floating-bar.visible {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateX(-50%) translateY(0);
+        }
+        .bottom-bar-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .bottom-bar-badge {
+            background: var(--lime-bright);
+            color: var(--purple-deep);
+            font-weight: 800;
+            font-size: 13px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bottom-bar-text small {
+            display: block;
+            font-size: 11px;
+            color: var(--text-purple-muted);
+            line-height: 1;
+        }
+        .bottom-bar-text strong {
+            font-family: 'Merienda', cursive;
+            font-size: 16px;
+            color: var(--cream-white);
+        }
+        .bottom-bar-btns {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-bar-bag {
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: var(--cream-white);
+            font-weight: 800;
+            font-size: 12.5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-bar-checkout {
+            height: 40px;
+            padding: 0 18px;
+            border-radius: 100px;
+            background: linear-gradient(180deg, var(--berry-red) 0%, var(--berry-red-dark) 100%);
+            border: 2px solid #ff8080;
+            color: #fff;
+            font-family: 'Merienda', cursive;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* TOAST DE CONFIRMAÇÃO */
+        .toast {
+            position: fixed;
+            top: 76px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--lime-bright);
+            color: var(--purple-deep);
+            border: 2px solid var(--cream-white);
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-weight: 800;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 2500;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* MODAIS / GAVETAS */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(24, 6, 33, 0.82);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-drawer {
+            position: relative;
+            width: 100%;
+            max-width: var(--max-w);
+            max-height: 90dvh;
+            background: var(--cream-white);
+            color: var(--purple-deep);
+            border-top: 5px solid var(--lime-bright);
+            border-radius: 28px 28px 0 0;
+            padding: 18px 20px 26px 20px;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -15px 45px rgba(0,0,0,0.6);
+        }
+        .modal-overlay.active .modal-drawer {
+            transform: translateY(0);
+        }
+
+        .drawer-handle {
+            width: 44px;
+            height: 5px;
+            background: #d3c4dc;
+            border-radius: 10px;
+            margin: 0 auto 16px auto;
+            cursor: pointer;
+        }
+
+        .close-x {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #efe8f5;
+            border: 2px solid #d5c5e0;
+            color: var(--purple-deep);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-family: 'Merienda', cursive;
+            font-size: 22px;
+            color: var(--purple-deep);
+            margin-bottom: 4px;
+            padding-right: 44px;
+        }
+        .modal-subtitle {
+            font-size: 13.5px;
+            color: #695175;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+
+        .option-group { margin-bottom: 20px; }
+        .option-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .option-head h4 {
+            font-family: 'Merienda', cursive;
+            font-size: 14px;
+            color: var(--purple-mid);
+        }
+        .req-badge {
+            font-size: 11px;
+            font-weight: 800;
+            background: #eef7c8;
+            color: #4b6604;
+            padding: 3px 10px;
+            border-radius: 100px;
+            border: 1px solid var(--lime-mid);
+        }
+
+        .size-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .size-option { cursor: pointer; position: relative; }
+        .size-option input { position: absolute; opacity: 0; pointer-events: none; }
+        .size-box {
+            background: #f5f0f9;
+            border: 2px solid #ded2e8;
+            border-radius: var(--radius-lg);
+            padding: 12px 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: var(--transition);
+        }
+        .size-box i { font-size: 22px; color: var(--purple-mid); }
+        .size-box strong { font-family: 'Merienda', cursive; font-size: 14px; color: var(--purple-deep); }
+        .size-box span { font-size: 12px; font-weight: 800; color: var(--lime-dark); }
+        
+        .size-option input:checked + .size-box {
+            background: var(--purple-deep);
+            border-color: var(--lime-bright);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(41, 14, 54, 0.25);
+        }
+        .size-option input:checked + .size-box strong,
+        .size-option input:checked + .size-box i {
+            color: var(--cream-white);
+        }
+        .size-option input:checked + .size-box span {
+            color: var(--lime-bright);
+        }
+
+        .addons-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .addon-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #f5f0f9;
+            border: 2px solid #e2d7eb;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .addon-row:has(input:checked) {
+            background: #eef7c8;
+            border-color: var(--lime-mid);
+        }
+        .addon-row label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            flex: 1;
+            font-weight: 700;
+            font-size: 14.5px;
+            color: var(--purple-deep);
+        }
+        .addon-price {
+            font-weight: 800;
+            font-size: 13.5px;
+            color: var(--purple-mid);
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--purple-mid);
+            border-radius: 6px;
+            background: #fff;
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        input[type="checkbox"]:checked {
+            background: var(--purple-mid);
+        }
+        input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: var(--lime-bright);
+            font-size: 13px;
+            font-weight: 900;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .input-natural {
+            width: 100%;
+            background: #f5f0f9;
+            border: 2px solid #dcd0e6;
+            color: var(--purple-deep);
+            padding: 13px 16px;
+            border-radius: var(--radius-md);
+            font-size: 14.5px;
+            font-family: inherit;
+            font-weight: 600;
+            outline: none;
+            margin-bottom: 12px;
+        }
+        .input-natural:focus {
+            border-color: var(--purple-mid);
+            background: #fff;
+        }
+
+        .modal-sticky-footer {
+            position: sticky;
+            bottom: -26px;
+            background: var(--cream-white);
+            padding: 12px 0 6px 0;
+            border-top: 2px dashed #dcd0e6;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+        .qty-row-modal {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 13.5px;
+        }
+        .qty-picker {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: #efe8f5;
+            border: 2px solid #d5c5e0;
+            padding: 4px 12px;
+            border-radius: 100px;
+        }
+        .qty-picker button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--purple-deep);
+            cursor: pointer;
+            width: 24px;
+        }
+
+        .dual-buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 10px;
+        }
+        .btn-modal-bag {
+            height: 50px;
+            border-radius: 100px;
+            background: linear-gradient(180deg, var(--lime-bright) 0%, var(--lime-mid) 100%);
+            border: 2px solid #abcf12;
+            color: var(--purple-deep);
+            font-family: 'Merienda', cursive;
+            font-weight: 700;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(158, 196, 24, 0.35);
+        }
+        .btn-modal-direct {
+            height: 50px;
+            border-radius: 100px;
+            background: linear-gradient(180deg, var(--berry-red) 0%, var(--berry-red-dark) 100%);
+            border: 2px solid #ff7575;
+            color: #fff;
+            font-family: 'Merienda', cursive;
+            font-weight: 700;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(214, 40, 40, 0.35);
+        }
+
+        .cart-item {
+            background: #f5f0f9;
+            border: 2px solid #e1d5eb;
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .cart-item-head {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Merienda', cursive;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .cart-item-details {
+            font-size: 13px;
+            color: #634b6e;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .cart-item-foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px dashed #d3c4dc;
+            padding-top: 8px;
+        }
+        .remove-link {
+            background: none;
+            border: none;
+            color: var(--berry-red);
+            font-weight: 800;
+            font-size: 12.5px;
+            cursor: pointer;
+        }
+
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .toggle-pill {
+            padding: 11px 10px;
+            border-radius: var(--radius-md);
+            border: 2px solid #dcd0e6;
+            background: #f5f0f9;
+            color: var(--purple-deep);
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+        .toggle-pill.active {
+            background: var(--purple-deep);
+            color: var(--lime-bright);
+            border-color: var(--purple-deep);
+        }
+
+        .pay-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .pay-option {
+            padding: 10px 6px;
+            border-radius: var(--radius-md);
+            border: 2px solid #dcd0e6;
+            background: #f5f0f9;
+            text-align: center;
+            font-weight: 800;
+            font-size: 12.5px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .pay-option i { font-size: 20px; color: var(--purple-mid); }
+        .pay-option.active {
+            background: #eef7c8;
+            border-color: var(--lime-dark);
+            color: var(--purple-deep);
+        }
+
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+        }
+
+        .summary-box {
+            background: #f5f0f9;
+            border: 2px solid #dcd0e6;
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Merienda', cursive;
+            font-size: 18px;
+            color: var(--purple-deep);
+            border-top: 2px dashed #cbbad6;
+            padding-top: 8px;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 600px) {
+            .organic-categories {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+            .dual-buttons-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
-<body>
+<body class="indigenous-pattern">
 
-    <!-- HEADER & HERO -->
-    <header class="hero">
-        <div class="header-top">
-            <div class="brand">
-                <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" alt="Logo">
-                <span>AÇAÍ <span style="color: var(--green-leaf);">PREMIUM</span></span>
+    <!-- TOAST DE AVISO -->
+    <div id="toast" class="toast">
+        <i class="ph-fill ph-check-circle" style="font-size: 18px;"></i>
+        <span id="toast-msg">Adicionado à sacola!</span>
+    </div>
+
+    <!-- TOP BAR ROXA COM MEDALHÃO -->
+    <header class="top-ribbon">
+        <div class="top-ribbon-inner">
+            <div class="brand-medallion">
+                <div class="medallion-circle">
+                    <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" alt="Logo Açaí Premium">
+                </div>
+                <div class="brand-titles">
+                    <strong>Açaí Premium</strong>
+                    <span><span class="online-dot"></span> Aberto • 100% Natural</span>
+                </div>
             </div>
-            <div class="cart-trigger" onclick="openDrawer('drawer-cart')">
-                <i class="ph ph-shopping-bag" style="font-size: 24px;"></i>
-                <div class="cart-badge" id="cart-count">0</div>
-            </div>
+
+            <button class="bag-pill-btn" onclick="openDrawer('drawer-cart')">
+                <i class="ph-fill ph-shopping-bag" style="font-size: 18px;"></i>
+                <span>Sacola</span>
+                <span class="bag-counter" id="cart-count">0</span>
+            </button>
         </div>
-
-        <!-- CONTAINER DO THREE.JS COM LOGO DE FUNDO E HINT DE SWIPE -->
-        <div class="hero-3d-container reveal">
-            <!-- Logo Grande de Fundo (Atrás do 3D) -->
-            <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" class="hero-bg-logo" alt="Logo de Fundo Açaí Premium">
-            
-            <div id="loading-text">Carregando Açaí 3D...</div>
-
-            <!-- Ícone Animado Indicando para Girar -->
-            <div class="swipe-hint" id="swipe-hint">
-                <i class="ph ph-hand-grabbing"></i>
-                <i class="ph ph-arrows-left-right"></i>
-            </div>
-
-            <!-- Onde o açaí em 3D será renderizado -->
-            <div id="three-canvas"></div>
-        </div>
-
-        <h1 class="reveal" style="color: var(--green-leaf);">Puro Sabor,<br>Estilo Único.</h1>
-        <p class="reveal">Monte do seu jeito com ingredientes premium e navegação ultra rápida.</p>
     </header>
 
-    <!-- NAVEGAÇÃO BENTO GRID -->
-    <nav class="bento-categories reveal">
-        <!-- 5. OTIMIZAÇÃO: Imagens secundárias agora usam loading="lazy" e decoding="async" -->
-        <div class="bento-card active" onclick="switchCategory('monte', this)">
-            <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" alt="Montar" loading="lazy" decoding="async">
-            <span>Montar Açaí</span>
-        </div>
-        <div class="bento-card" onclick="switchCategory('especiais', this)">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" alt="Especiais" loading="lazy" decoding="async">
-            <span>Especiais</span>
-        </div>
-        <div class="bento-card" onclick="switchCategory('barcas', this)">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTb1HeQ_tuH00jaBcNAPCjtDEDyItgQKdeNQQ&s" alt="Barcas" loading="lazy" decoding="async">
-            <span>Barcas</span>
-        </div>
-        <div class="bento-card" onclick="switchCategory('cremes', this)">
-            <img src="https://s2-receitas.glbimg.com/fZHM_C_R40-glEZajUS4ELfARTA=/0x0:900x1600/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_1f540e0b94d8437dbbc39d567a1dee68/internal_photos/bs/2023/5/4/HnkJ6NTpikR000UtRv6Q/pudim-de-leite-com-creme-de-cupuacu-1-.jpeg" alt="Cremes" loading="lazy" decoding="async">
-            <span>Cremes</span>
-        </div>
-    </nav>
+    <!-- PALCO ROXO COM BARRA VERDE-LIMÃO, PRODUTO 3D E PRATELEIRA DE TAMANHOS -->
+    <section class="hero-showcase">
+        <div class="hero-container">
+            
+            <!-- Barra de Pílula Verde-Limão -->
+            <nav class="lime-nav-pill">
+                <button class="lime-tab active" onclick="switchCategory('monte', this)">Montar Açaí</button>
+                <button class="lime-tab" onclick="switchCategory('especiais', this)">Especiais</button>
+                <button class="lime-tab" onclick="switchCategory('barcas', this)">Barcas</button>
+                <button class="lime-tab" onclick="switchCategory('cremes', this)">Cremes</button>
+            </nav>
 
-    <!-- LISTA DE PRODUTOS -->
-    <main>
-        <!-- ABA: MONTAR -->
-        <section id="monte" class="menu-section active">
-            <div class="product-item reveal" onclick="openProduct('Açaí Tradicional', 12.00, true)">
-                <div class="product-info">
-                    <h3>Açaí Tradicional</h3>
-                    <p>Copo de açaí montado do seu jeito, escolha o tamanho e todos os complementos.</p>
-                </div>
-                <div class="product-action">
-                    <span class="product-price">A partir R$12</span>
-                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
-                </div>
+            <!-- Rótulo Dinâmico entre Colchetes como "[ Pote 150g ]" na referência -->
+            <div class="bracket-title" id="bracket-box">
+                <span class="br-color">[</span> <span id="bracket-label">Copo 500ml Tradicional</span> <span class="br-color">]</span>
             </div>
-            <div class="product-item reveal" onclick="openProduct('Açaí Zero Açúcar', 14.00, true)">
-                <div class="product-info">
-                    <h3>Açaí Zero Açúcar</h3>
-                    <p>Sabor premium intenso, adoçado apenas com Stevia natural.</p>
-                </div>
-                <div class="product-action">
-                    <span class="product-price">A partir R$14</span>
-                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
-                </div>
-            </div>
-        </section>
 
-        <!-- ABA: ESPECIAIS -->
-        <section id="especiais" class="menu-section">
-            <div class="product-item reveal" onclick="quickAdd('Vulcão de Nutella 500ml', 28.00)">
-                <div class="product-info">
-                    <h3>Vulcão de Nutella (500ml)</h3>
-                    <p>Copo lambuzado de Nutella, morango fresco, leite ninho e Kinder Bueno.</p>
-                </div>
-                <div class="product-action">
-                    <span class="product-price">R$ 28,00</span>
-                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
-                </div>
-            </div>
-            <div class="product-item reveal" onclick="quickAdd('Copo Sensação 700ml', 32.00)">
-                <div class="product-info">
-                    <h3>Copo Sensação (700ml)</h3>
-                    <p>Açaí em camadas com creme de morango artesanal e calda de chocolate.</p>
-                </div>
-                <div class="product-action">
-                    <span class="product-price">R$ 32,00</span>
-                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
-                </div>
-            </div>
-        </section>
+            <!-- Palco 3D com setas circulares verdes nas laterais -->
+            <div class="stage-3d-wrapper">
+                <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" class="hero-bg-logo" alt="Selo de Fundo">
+                
+                <button type="button" class="stage-arrow left" id="rot-left" title="Girar para a esquerda">
+                    <i class="ph-fill ph-caret-left"></i>
+                </button>
 
-        <!-- ABA: BARCAS -->
-        <section id="barcas" class="menu-section">
-            <div class="product-item reveal" onclick="quickAdd('Barca Premium 1 Litro', 45.00)">
-                <div class="product-info">
-                    <h3>Barca Premium (1 Litro)</h3>
-                    <p>Açaí na barca acompanhado de 5 complementos à sua escolha (informe na observação do carrinho).</p>
-                </div>
-                <div class="product-action">
-                    <span class="product-price">R$ 45,00</span>
-                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
-                </div>
-            </div>
-        </section>
+                <div id="loading-text">Preparando Açaí 3D...</div>
+                <div id="three-canvas"></div>
 
-        <!-- ABA: CREMES -->
-        <section id="cremes" class="menu-section">
-            <div class="product-item reveal" onclick="openProduct('Creme de Cupuaçu', 14.00, true)">
-                <div class="product-info">
-                    <h3>Creme de Cupuaçu</h3>
-                    <p>Autêntico creme artesanal com o azedinho inconfundível.</p>
+                <button type="button" class="stage-arrow right" id="rot-right" title="Girar para a direita">
+                    <i class="ph-fill ph-caret-right"></i>
+                </button>
+            </div>
+
+            <div class="swipe-caption" id="swipe-hint">
+                <i class="ph-bold ph-hand-pointing"></i> Arraste o copo 3D ou clique em um tamanho na prateleira abaixo
+            </div>
+
+            <!-- Linha divisória acima da prateleira -->
+            <div class="shelf-top-divider"></div>
+
+            <!-- PRATELEIRA INTERATIVA DE POTINHOS (IGUAL À IMAGEM DE REFERÊNCIA) -->
+            <div class="shelf-showcase">
+                <div class="shelf-hint-title">👇 Toque no tamanho desejado para já abrir a montagem:</div>
+                
+                <div class="shelf-items-row">
+                    <!-- 1. Copo 300ml -->
+                    <div class="shelf-pot-item" onclick="selectFromShelf(this, 'Copo 300ml', 0.85, 'Açaí Tradicional', 12.00, '300ml|0')">
+                        <div class="mini-pot-lid"></div>
+                        <div class="mini-pot pot-300">
+                            <div class="mini-pot-logo">🌴</div>
+                            <div class="mini-pot-stripe">300ml</div>
+                        </div>
+                        <span class="shelf-pot-label">300ml</span>
+                        <span class="shelf-pot-price">R$ 12</span>
+                    </div>
+
+                    <!-- 2. Copo 500ml (Ativo por padrão) -->
+                    <div class="shelf-pot-item active" onclick="selectFromShelf(this, 'Copo 500ml Tradicional', 1.0, 'Açaí Tradicional', 12.00, '500ml|4')">
+                        <div class="mini-pot-lid"></div>
+                        <div class="mini-pot pot-500">
+                            <div class="mini-pot-logo">🌴</div>
+                            <div class="mini-pot-stripe">500ml</div>
+                        </div>
+                        <span class="shelf-pot-label">500ml</span>
+                        <span class="shelf-pot-price">R$ 16</span>
+                    </div>
+
+                    <!-- 3. Copo 700ml -->
+                    <div class="shelf-pot-item" onclick="selectFromShelf(this, 'Copo 700ml Caprichado', 1.14, 'Açaí Tradicional', 12.00, '700ml|8')">
+                        <div class="mini-pot-lid"></div>
+                        <div class="mini-pot pot-700">
+                            <div class="mini-pot-logo">🌴</div>
+                            <div class="mini-pot-stripe">700ml</div>
+                        </div>
+                        <span class="shelf-pot-label">700ml</span>
+                        <span class="shelf-pot-price">R$ 20</span>
+                    </div>
+
+                    <!-- 4. Açaí Zero -->
+                    <div class="shelf-pot-item" onclick="selectFromShelf(this, 'Açaí Zero Açúcar', 0.95, 'Açaí Zero Açúcar', 14.00, '300ml|0')">
+                        <div class="mini-pot-lid"></div>
+                        <div class="mini-pot pot-zero">
+                            <div class="mini-pot-logo">🌿</div>
+                            <div class="mini-pot-stripe">Zero</div>
+                        </div>
+                        <span class="shelf-pot-label">Zero</span>
+                        <span class="shelf-pot-price">R$ 14</span>
+                    </div>
+
+                    <!-- 5. Vulcão de Nutella (Com tampa dome igual ao 2º pote da foto) -->
+                    <div class="shelf-pot-item" onclick="selectSpecialFromShelf(this, 'Vulcão de Nutella 500ml', 1.05, 'especiais', 'Vulcão de Nutella 500ml', 28.00)">
+                        <div class="mini-pot-dome"></div>
+                        <div class="mini-pot-lid red-lid"></div>
+                        <div class="mini-pot pot-vulcao">
+                            <div class="mini-pot-logo">🍫</div>
+                            <div class="mini-pot-stripe red-stripe">Vulcão</div>
+                        </div>
+                        <span class="shelf-pot-label">Vulcão</span>
+                        <span class="shelf-pot-price">R$ 28</span>
+                    </div>
+
+                    <!-- 6. Creme de Cupuaçu -->
+                    <div class="shelf-pot-item" onclick="selectFromShelf(this, 'Creme de Cupuaçu', 0.95, 'Creme de Cupuaçu', 14.00, '300ml|0')">
+                        <div class="mini-pot-lid gold-lid"></div>
+                        <div class="mini-pot pot-zero">
+                            <div class="mini-pot-logo">🍈</div>
+                            <div class="mini-pot-stripe gold-stripe">Creme</div>
+                        </div>
+                        <span class="shelf-pot-label">Cupuaçu</span>
+                        <span class="shelf-pot-price">R$ 14</span>
+                    </div>
+
+                    <!-- 7. Barca 1 Litro (Formato largo igual ao pote central da prateleira da foto) -->
+                    <div class="shelf-pot-item" onclick="selectSpecialFromShelf(this, 'Barca Premium 1 Litro', 1.18, 'barcas', 'Barca Premium 1 Litro', 45.00)">
+                        <div class="mini-pot-lid red-lid"></div>
+                        <div class="mini-pot pot-barca">
+                            <div class="mini-pot-logo">🛶</div>
+                            <div class="mini-pot-stripe red-stripe">Barca 1L</div>
+                        </div>
+                        <span class="shelf-pot-label">Barca 1L</span>
+                        <span class="shelf-pot-price">R$ 45</span>
+                    </div>
                 </div>
-                <div class="product-action">
-                    <span class="product-price">A partir R$14</span>
-                    <button class="btn-icon"><i class="ph ph-plus"></i></button>
+
+                <!-- Tábua 3D da prateleira roxa -->
+                <div class="shelf-3d-base"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- DIVISÓRIA ONDULADA (TRANSIÇÃO ROXO -> VERDE FOLHA) -->
+    <div class="wave-divider-top"></div>
+
+    <!-- SEÇÃO VERDE NATUREZA (CARDÁPIO E CATEGORIAS) -->
+    <main class="nature-green-section" id="menu-area">
+        <div class="nature-container">
+            
+            <div class="nature-header">
+                <div class="nature-header-titles">
+                    <small>aqui tem puro sabor</small>
+                    <h1>Nosso Cardápio</h1>
+                </div>
+                <span class="nature-header-sub">🌱 Ingredientes Frescos</span>
+            </div>
+
+            <!-- Seletor Visual de Categorias com Fotos Circulares -->
+            <div class="organic-categories">
+                <div class="organic-cat-card active" data-cat="monte" onclick="switchCategory('monte', this)">
+                    <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" alt="Montar Açaí" loading="lazy">
+                    <span>Montar Açaí</span>
+                </div>
+                <div class="organic-cat-card" data-cat="especiais" onclick="switchCategory('especiais', this)">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" alt="Especiais" loading="lazy">
+                    <span>Especiais</span>
+                </div>
+                <div class="organic-cat-card" data-cat="barcas" onclick="switchCategory('barcas', this)">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTb1HeQ_tuH00jaBcNAPCjtDEDyItgQKdeNQQ&s" alt="Barcas" loading="lazy">
+                    <span>Barcas</span>
+                </div>
+                <div class="organic-cat-card" data-cat="cremes" onclick="switchCategory('cremes', this)">
+                    <img src="https://s2-receitas.glbimg.com/fZHM_C_R40-glEZajUS4ELfARTA=/0x0:900x1600/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_1f540e0b94d8437dbbc39d567a1dee68/internal_photos/bs/2023/5/4/HnkJ6NTpikR000UtRv6Q/pudim-de-leite-com-creme-de-cupuacu-1-.jpeg" alt="Cremes" loading="lazy">
+                    <span>Cremes</span>
                 </div>
             </div>
-        </section>
+
+            <!-- ABA 1: MONTAR AÇAÍ -->
+            <section id="monte" class="menu-section active">
+                <div class="product-card">
+                    <div class="product-card-main" onclick="openProduct('Açaí Tradicional', 12.00)">
+                        <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" class="product-circle-img" alt="Açaí Tradicional" loading="lazy">
+                        <div class="product-info">
+                            <span class="natural-tag">Mais Pedido</span>
+                            <h3>Açaí Tradicional</h3>
+                            <p>Copo de açaí montado do seu jeito, escolha o tamanho e todos os complementos.</p>
+                        </div>
+                    </div>
+                    <div class="product-card-actions">
+                        <div class="price-tag-box">
+                            <small>A partir de</small>
+                            <strong>R$ 12,00</strong>
+                        </div>
+                        <div class="cta-buttons-group">
+                            <button class="btn-organic-bag" onclick="openProduct('Açaí Tradicional', 12.00)">
+                                <i class="ph-bold ph-sliders-horizontal"></i> Escolher Opções
+                            </button>
+                            <button class="btn-organic-direct" onclick="openProduct('Açaí Tradicional', 12.00)">
+                                Montar Já <i class="ph-bold ph-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-card-main" onclick="openProduct('Açaí Zero Açúcar', 14.00)">
+                        <img src="https://soubh.uai.com.br/wp-content/uploads/2025/02/Acai-Bom-Gosto-capa-e1739196486237.jpg" class="product-circle-img" alt="Açaí Zero Açúcar" loading="lazy">
+                        <div class="product-info">
+                            <span class="natural-tag">100% Natural • Stevia</span>
+                            <h3>Açaí Zero Açúcar</h3>
+                            <p>Sabor intenso da fruta, adoçado naturalmente com Stevia sem adição de açúcar.</p>
+                        </div>
+                    </div>
+                    <div class="product-card-actions">
+                        <div class="price-tag-box">
+                            <small>A partir de</small>
+                            <strong>R$ 14,00</strong>
+                        </div>
+                        <div class="cta-buttons-group">
+                            <button class="btn-organic-bag" onclick="openProduct('Açaí Zero Açúcar', 14.00)">
+                                <i class="ph-bold ph-sliders-horizontal"></i> Escolher Opções
+                            </button>
+                            <button class="btn-organic-direct" onclick="openProduct('Açaí Zero Açúcar', 14.00)">
+                                Montar Já <i class="ph-bold ph-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 2: ESPECIAIS -->
+            <section id="especiais" class="menu-section">
+                <div class="product-card">
+                    <div class="product-card-main" onclick="quickBuyNow('Vulcão de Nutella 500ml', 28.00)">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" class="product-circle-img" alt="Vulcão de Nutella" loading="lazy">
+                        <div class="product-info">
+                            <span class="natural-tag">Especial • 500ml</span>
+                            <h3>Vulcão de Nutella (500ml)</h3>
+                            <p>Copo lambuzado de Nutella, morango fresco, leite ninho e Kinder Bueno.</p>
+                        </div>
+                    </div>
+                    <div class="product-card-actions">
+                        <div class="price-tag-box">
+                            <small>Pronto para pedir</small>
+                            <strong>R$ 28,00</strong>
+                        </div>
+                        <div class="cta-buttons-group">
+                            <button class="btn-organic-bag" onclick="quickAdd('Vulcão de Nutella 500ml', 28.00)">
+                                <i class="ph-bold ph-shopping-bag"></i> + Sacola
+                            </button>
+                            <button class="btn-organic-direct" onclick="quickBuyNow('Vulcão de Nutella 500ml', 28.00)">
+                                Finalizar Já <i class="ph-bold ph-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-card-main" onclick="quickBuyNow('Copo Sensação 700ml', 32.00)">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTo9K2MEzR0YyJP71Ed1E031GA9MvC48tt8SQ&s" class="product-circle-img" alt="Copo Sensação" loading="lazy">
+                        <div class="product-info">
+                            <span class="natural-tag">Especial • 700ml</span>
+                            <h3>Copo Sensação (700ml)</h3>
+                            <p>Açaí em camadas com creme de morango artesanal e calda de chocolate.</p>
+                        </div>
+                    </div>
+                    <div class="product-card-actions">
+                        <div class="price-tag-box">
+                            <small>Pronto para pedir</small>
+                            <strong>R$ 32,00</strong>
+                        </div>
+                        <div class="cta-buttons-group">
+                            <button class="btn-organic-bag" onclick="quickAdd('Copo Sensação 700ml', 32.00)">
+                                <i class="ph-bold ph-shopping-bag"></i> + Sacola
+                            </button>
+                            <button class="btn-organic-direct" onclick="quickBuyNow('Copo Sensação 700ml', 32.00)">
+                                Finalizar Já <i class="ph-bold ph-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 3: BARCAS -->
+            <section id="barcas" class="menu-section">
+                <div class="product-card">
+                    <div class="product-card-main" onclick="quickBuyNow('Barca Premium 1 Litro', 45.00)">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTb1HeQ_tuH00jaBcNAPCjtDEDyItgQKdeNQQ&s" class="product-circle-img" alt="Barca Premium" loading="lazy">
+                        <div class="product-info">
+                            <span class="natural-tag">Para Dividir • 1 Litro</span>
+                            <h3>Barca Premium (1 Litro)</h3>
+                            <p>Açaí na barca acompanhado de 5 complementos à sua escolha (informe na observação).</p>
+                        </div>
+                    </div>
+                    <div class="product-card-actions">
+                        <div class="price-tag-box">
+                            <small>Combo Família</small>
+                            <strong>R$ 45,00</strong>
+                        </div>
+                        <div class="cta-buttons-group">
+                            <button class="btn-organic-bag" onclick="quickAdd('Barca Premium 1 Litro', 45.00)">
+                                <i class="ph-bold ph-shopping-bag"></i> + Sacola
+                            </button>
+                            <button class="btn-organic-direct" onclick="quickBuyNow('Barca Premium 1 Litro', 45.00)">
+                                Finalizar Já <i class="ph-bold ph-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 4: CREMES -->
+            <section id="cremes" class="menu-section">
+                <div class="product-card">
+                    <div class="product-card-main" onclick="openProduct('Creme de Cupuaçu', 14.00)">
+                        <img src="https://s2-receitas.glbimg.com/fZHM_C_R40-glEZajUS4ELfARTA=/0x0:900x1600/984x0/smart/filters:strip_icc()/i.s3.glbimg.com/v1/AUTH_1f540e0b94d8437dbbc39d567a1dee68/internal_photos/bs/2023/5/4/HnkJ6NTpikR000UtRv6Q/pudim-de-leite-com-creme-de-cupuacu-1-.jpeg" class="product-circle-img" alt="Creme de Cupuaçu" loading="lazy">
+                        <div class="product-info">
+                            <span class="natural-tag">Fruta da Amazônia</span>
+                            <h3>Creme de Cupuaçu</h3>
+                            <p>Autêntico creme artesanal com o azedinho inconfundível do cupuaçu natural.</p>
+                        </div>
+                    </div>
+                    <div class="product-card-actions">
+                        <div class="price-tag-box">
+                            <small>A partir de</small>
+                            <strong>R$ 14,00</strong>
+                        </div>
+                        <div class="cta-buttons-group">
+                            <button class="btn-organic-bag" onclick="openProduct('Creme de Cupuaçu', 14.00)">
+                                <i class="ph-bold ph-sliders-horizontal"></i> Escolher Opções
+                            </button>
+                            <button class="btn-organic-direct" onclick="openProduct('Creme de Cupuaçu', 14.00)">
+                                Montar Já <i class="ph-bold ph-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
     </main>
 
-    <!-- FAB CARRINHO -->
-    <div class="fab-cart" id="fab-cart" onclick="openDrawer('drawer-cart')">
-        <div class="fab-icon-wrapper">
-            <i class="ph ph-shopping-cart"></i>
-            <div class="fab-badge" id="fab-count">0</div>
+    <!-- RODAPÉ COM TEXTURA AMAZÔNICA E SELO CENTRAL -->
+    <footer class="footer-showcase indigenous-pattern">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h3>Entrega Rápida!</h3>
+                <p>Receba seu açaí bem gelado em casa ou retire direto na nossa loja sem taxa.</p>
+                <button class="footer-red-pill" onclick="openDrawer('drawer-cart')">Ver Minha Sacola</button>
+            </div>
+
+            <div class="footer-center-seal">
+                <img src="https://i.postimg.cc/DymhX8w4/image-Photoroom.png" alt="Selo Central Açaí Premium">
+            </div>
+
+            <div class="footer-col">
+                <h3>Peça pelo Site</h3>
+                <p>Monte seu copo do seu jeito e envie seu pedido direto para nossa cozinha.</p>
+                <button class="footer-red-pill" onclick="proceedToCheckout()">Finalizar Pedido</button>
+            </div>
         </div>
-        <span class="fab-text">Concluir Pedido</span>
+    </footer>
+
+    <!-- BARRA FLUTUANTE INFERIOR -->
+    <div class="bottom-floating-bar" id="fab-cart">
+        <div class="bottom-bar-info" onclick="openDrawer('drawer-cart')">
+            <div class="bottom-bar-badge" id="fab-count">0</div>
+            <div class="bottom-bar-text">
+                <small>Total na sacola</small>
+                <strong id="fab-total">R$ 0,00</strong>
+            </div>
+        </div>
+        <div class="bottom-bar-btns">
+            <button class="btn-bar-bag" onclick="openDrawer('drawer-cart')">Sacola</button>
+            <button class="btn-bar-checkout" onclick="proceedToCheckout()">
+                <span>Finalizar Já</span>
+                <i class="ph-bold ph-arrow-right"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- DRAWER: CUSTOMIZAÇÃO DO PRODUTO -->
-    <div class="modal-overlay" id="drawer-product">
+    <!-- DRAWER 1: MONTAGEM DO AÇAÍ -->
+    <div class="modal-overlay" id="drawer-product" onclick="if(event.target === this) closeDrawer('drawer-product')">
         <div class="modal-drawer">
-            <button class="close-x" onclick="closeDrawer('drawer-product')"><i class="ph ph-x"></i></button>
+            <button class="close-x" onclick="closeDrawer('drawer-product')"><i class="ph-bold ph-x"></i></button>
             <div class="drawer-handle" onclick="closeDrawer('drawer-product')"></div>
+            
             <h2 class="modal-title" id="prod-title">Montar Açaí</h2>
+            <p class="modal-subtitle">Escolha o tamanho do pote e os acompanhamentos.</p>
             
             <div class="option-group">
-                <h4>1. Tamanho</h4>
-                <div class="option-row"><label><input type="radio" name="size" value="300ml|0" onchange="calcLivePrice()" checked> Copo 300ml</label><span class="price-tag">+ R$ 0,00</span></div>
-                <div class="option-row"><label><input type="radio" name="size" value="500ml|4" onchange="calcLivePrice()"> Copo 500ml</label><span class="price-tag">+ R$ 4,00</span></div>
-                <div class="option-row"><label><input type="radio" name="size" value="700ml|8" onchange="calcLivePrice()"> Copo 700ml</label><span class="price-tag">+ R$ 8,00</span></div>
+                <div class="option-head">
+                    <h4>1. Tamanho do Copo</h4>
+                    <span class="req-badge">Obrigatório</span>
+                </div>
+                <div class="size-grid">
+                    <label class="size-option">
+                        <input type="radio" name="size" value="300ml|0" onchange="calcLivePrice()" checked>
+                        <div class="size-box">
+                            <i class="ph-fill ph-cup"></i>
+                            <strong>300ml</strong>
+                            <span>+ R$ 0,00</span>
+                        </div>
+                    </label>
+                    <label class="size-option">
+                        <input type="radio" name="size" value="500ml|4" onchange="calcLivePrice()">
+                        <div class="size-box">
+                            <i class="ph-fill ph-cup"></i>
+                            <strong>500ml</strong>
+                            <span>+ R$ 4,00</span>
+                        </div>
+                    </label>
+                    <label class="size-option">
+                        <input type="radio" name="size" value="700ml|8" onchange="calcLivePrice()">
+                        <div class="size-box">
+                            <i class="ph-fill ph-cup"></i>
+                            <strong>700ml</strong>
+                            <span>+ R$ 8,00</span>
+                        </div>
+                    </label>
+                </div>
             </div>
 
             <div class="option-group">
-                <h4>2. Complementos</h4>
-                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Leite em Pó|2.50" onchange="calcLivePrice()"> Leite em Pó</label><span class="price-tag">+ R$ 2,50</span></div>
-                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Leite Condensado|3.00" onchange="calcLivePrice()"> Leite Condensado</label><span class="price-tag">+ R$ 3,00</span></div>
-                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Morango|4.00" onchange="calcLivePrice()"> Morango Fresco</label><span class="price-tag">+ R$ 4,00</span></div>
-                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Nutella|6.00" onchange="calcLivePrice()"> Nutella</label><span class="price-tag">+ R$ 6,00</span></div>
-                <div class="option-row"><label><input type="checkbox" class="cb-addon" value="Paçoca|2.00" onchange="calcLivePrice()"> Paçoca</label><span class="price-tag">+ R$ 2,00</span></div>
+                <div class="option-head">
+                    <h4>2. Complementos</h4>
+                    <span style="font-size: 12px; color: #695175; font-weight: 700;">Opcional</span>
+                </div>
+                <div class="addons-list">
+                    <div class="addon-row">
+                        <label><input type="checkbox" class="cb-addon" value="Leite em Pó|2.50" onchange="calcLivePrice()"> Leite em Pó</label>
+                        <span class="addon-price">+ R$ 2,50</span>
+                    </div>
+                    <div class="addon-row">
+                        <label><input type="checkbox" class="cb-addon" value="Leite Condensado|3.00" onchange="calcLivePrice()"> Leite Condensado</label>
+                        <span class="addon-price">+ R$ 3,00</span>
+                    </div>
+                    <div class="addon-row">
+                        <label><input type="checkbox" class="cb-addon" value="Morango|4.00" onchange="calcLivePrice()"> Morango Fresco</label>
+                        <span class="addon-price">+ R$ 4,00</span>
+                    </div>
+                    <div class="addon-row">
+                        <label><input type="checkbox" class="cb-addon" value="Nutella|6.00" onchange="calcLivePrice()"> Nutella</label>
+                        <span class="addon-price">+ R$ 6,00</span>
+                    </div>
+                    <div class="addon-row">
+                        <label><input type="checkbox" class="cb-addon" value="Paçoca|2.00" onchange="calcLivePrice()"> Paçoca</label>
+                        <span class="addon-price">+ R$ 2,00</span>
+                    </div>
+                </div>
             </div>
 
-            <textarea id="prod-obs" class="input-glass" rows="2" placeholder="Alguma observação especial?"></textarea>
+            <textarea id="prod-obs" class="input-natural" rows="2" placeholder="Alguma observação? (Ex: Em camadas, colher extra...)"></textarea>
 
-            <button class="btn-glow" onclick="addConfiguredProduct()">Adicionar • <span id="live-price-btn">R$ 12,00</span></button>
+            <!-- RODAPÉ COM OS DOIS BOTÕES -->
+            <div class="modal-sticky-footer">
+                <div class="qty-row-modal">
+                    <span>Quantidade:</span>
+                    <div class="qty-picker">
+                        <button type="button" onclick="changeModalQty(-1)">−</button>
+                        <span id="modal-qty-val">1</span>
+                        <button type="button" onclick="changeModalQty(1)">+</button>
+                    </div>
+                </div>
+                <div class="dual-buttons-grid">
+                    <button type="button" class="btn-modal-bag" onclick="addConfiguredProduct(false)">
+                        <i class="ph-bold ph-shopping-bag"></i>
+                        <span>+ Na Sacola</span>
+                    </button>
+                    <button type="button" class="btn-modal-direct" onclick="addConfiguredProduct(true)">
+                        <span>Finalizar • <span id="live-price-btn">R$ 12,00</span></span>
+                        <i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- DRAWER: CARRINHO -->
-    <div class="modal-overlay" id="drawer-cart">
+    <!-- DRAWER 2: SACOLA -->
+    <div class="modal-overlay" id="drawer-cart" onclick="if(event.target === this) closeDrawer('drawer-cart')">
         <div class="modal-drawer">
-            <button class="close-x" onclick="closeDrawer('drawer-cart')"><i class="ph ph-x"></i></button>
+            <button class="close-x" onclick="closeDrawer('drawer-cart')"><i class="ph-bold ph-x"></i></button>
             <div class="drawer-handle" onclick="closeDrawer('drawer-cart')"></div>
             <h2 class="modal-title">Sua Sacola</h2>
+            <p class="modal-subtitle">Confira os itens escolhidos abaixo.</p>
             
             <div id="cart-content"></div>
 
-            <div id="cart-footer" style="display: none; margin-top: 24px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-family: 'Syne', sans-serif; font-size:20px; font-weight:800; color: var(--text-main);">
-                    <span>Subtotal</span> <span id="cart-subtotal" style="color: var(--accent);">R$ 0,00</span>
+            <div id="cart-footer" style="display: none; margin-top: 16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:14px; font-family: 'Merienda', cursive; font-size:18px;">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal" style="color: var(--purple-mid);">R$ 0,00</span>
                 </div>
-                <button class="btn-glow" onclick="proceedToCheckout()">FINALIZAR COMPRA</button>
+                <div class="dual-buttons-grid">
+                    <button type="button" class="btn-modal-bag" onclick="closeDrawer('drawer-cart')">
+                        <i class="ph-bold ph-plus"></i> Mais Itens
+                    </button>
+                    <button type="button" class="btn-modal-direct" onclick="proceedToCheckout()">
+                        <span>Finalizar Pedido</span>
+                        <i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                </div>
             </div>
 
-            <div id="cart-empty" style="text-align: center; color: var(--text-muted); padding: 60px 0;">
-                <i class="ph ph-shopping-cart" style="font-size: 56px; margin-bottom: 20px; opacity: 0.3; color: var(--primary);"></i>
-                <p style="font-size: 16px; font-weight: 500;">Sua sacola de experiências está vazia.</p>
+            <div id="cart-empty" style="text-align: center; color: #796285; padding: 40px 0;">
+                <i class="ph-duotone ph-shopping-bag" style="font-size: 56px; margin-bottom: 10px; color: var(--purple-mid);"></i>
+                <p style="font-size: 15px; font-weight: 700;">Sua sacola ainda está vazia.</p>
             </div>
         </div>
     </div>
 
-    <!-- DRAWER: CHECKOUT -->
-    <div class="modal-overlay" id="drawer-checkout">
+    <!-- DRAWER 3: FINALIZAR PEDIDO DIRETO -->
+    <div class="modal-overlay" id="drawer-checkout" onclick="if(event.target === this) closeDrawer('drawer-checkout')">
         <div class="modal-drawer">
-            <button class="close-x" onclick="closeDrawer('drawer-checkout')"><i class="ph ph-x"></i></button>
+            <button class="close-x" onclick="closeDrawer('drawer-checkout')"><i class="ph-bold ph-x"></i></button>
             <div class="drawer-handle" onclick="closeDrawer('drawer-checkout')"></div>
-            <h2 class="modal-title">Checkout</h2>
+            <h2 class="modal-title">Finalizar Pedido</h2>
+            <p class="modal-subtitle">Informe seus dados para enviarmos seu pedido direto para a cozinha.</p>
 
-            <div id="chk-step-1">
-                <input type="text" id="chk-nome" class="input-glass" placeholder="Seu nome completo">
-                <select id="chk-tipo" class="input-glass" onchange="toggleDelivery()">
-                    <option value="entrega">Entrega via Motoboy (+ R$ 4,00)</option>
-                    <option value="retirada">Retirar na Loja (Grátis)</option>
-                </select>
-                <button class="btn-glow" onclick="stepCheck(2)">AVANÇAR</button>
+            <input type="text" id="chk-nome" class="input-natural" placeholder="Seu nome completo">
+            <input type="tel" id="chk-telefone" class="input-natural" placeholder="Seu telefone / WhatsApp (Ex: 38 99999-9999)" oninput="mascaraTelefone(this)" maxlength="15">
+
+            <div class="option-head">
+                <h4>Como prefere receber?</h4>
+            </div>
+            <input type="hidden" id="chk-tipo" value="entrega">
+            <div class="toggle-group">
+                <button type="button" class="toggle-pill active" id="seg-entrega" onclick="selectDeliveryMode('entrega')">
+                    🛵 Entrega (+R$ 4,00)
+                </button>
+                <button type="button" class="toggle-pill" id="seg-retirada" onclick="selectDeliveryMode('retirada')">
+                    🏪 Retirar na Loja
+                </button>
             </div>
 
-            <div id="chk-step-2" style="display:none;">
-                <div id="address-container">
-                    <input type="text" id="chk-rua" class="input-glass" placeholder="Nome da Rua">
-                    <div class="form-grid">
-                        <input type="text" id="chk-num" class="input-glass" placeholder="Número">
-                        <input type="text" id="chk-bairro" class="input-glass" placeholder="Bairro">
-                    </div>
+            <div id="address-container">
+                <input type="text" id="chk-rua" class="input-natural" placeholder="Nome da Rua / Avenida">
+                <div class="form-row-2">
+                    <input type="text" id="chk-num" class="input-natural" placeholder="Número">
+                    <input type="text" id="chk-bairro" class="input-natural" placeholder="Bairro">
                 </div>
-                <select id="chk-pagamento" class="input-glass" onchange="toggleTroco()">
-                    <option value="pix">PIX</option>
-                    <option value="dinheiro">Dinheiro</option>
-                    <option value="cartao">Cartão na Entrega</option>
-                </select>
-                <input type="text" id="chk-troco" class="input-glass" placeholder="Troco para quanto?" style="display:none;">
-                
-                <button class="btn-glow" onclick="finishOrder()">ENVIAR PEDIDO • <span id="final-total">R$ 0,00</span></button>
             </div>
+
+            <div class="option-head">
+                <h4>Forma de Pagamento</h4>
+            </div>
+            <input type="hidden" id="chk-pagamento" value="pix">
+            <div class="pay-grid">
+                <div class="pay-option active" onclick="selectPayment('pix', this)">
+                    <i class="ph-fill ph-qr-code"></i>
+                    <span>PIX</span>
+                </div>
+                <div class="pay-option" onclick="selectPayment('cartao', this)">
+                    <i class="ph-fill ph-credit-card"></i>
+                    <span>Cartão</span>
+                </div>
+                <div class="pay-option" onclick="selectPayment('dinheiro', this)">
+                    <i class="ph-fill ph-money"></i>
+                    <span>Dinheiro</span>
+                </div>
+            </div>
+
+            <input type="text" id="chk-troco" class="input-natural" placeholder="Troco para quanto? (Ex: R$ 50,00)" style="display:none;">
+
+            <div class="summary-box">
+                <div class="summary-line">
+                    <span>Subtotal dos produtos</span>
+                    <span id="chk-sub-val">R$ 0,00</span>
+                </div>
+                <div class="summary-line" id="chk-fee-row">
+                    <span>Taxa de entrega</span>
+                    <span>R$ 4,00</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total do Pedido</span>
+                    <span id="final-total">R$ 0,00</span>
+                </div>
+            </div>
+
+            <button type="button" id="btn-submit-order" class="btn-modal-direct" style="width: 100%; height: 54px; font-size: 15px;" onclick="finishOrder()">
+                <i class="ph-bold ph-check-circle" style="font-size: 22px;"></i>
+                <span id="btn-submit-text">Confirmar e Enviar Pedido</span>
+            </button>
         </div>
     </div>
 
-    <!-- Lógica de Interface e API WhatsApp Unificada -->
+    <!-- DRAWER 4: CONFIRMAÇÃO DE PEDIDO ENVIADO -->
+    <div class="modal-overlay" id="drawer-sucesso" onclick="if(event.target === this) closeDrawer('drawer-sucesso')">
+        <div class="modal-drawer" style="text-align: center; padding: 30px 22px;">
+            <button class="close-x" onclick="closeDrawer('drawer-sucesso')"><i class="ph-bold ph-x"></i></button>
+            <div class="drawer-handle" onclick="closeDrawer('drawer-sucesso')"></div>
+            
+            <div style="width: 72px; height: 72px; border-radius: 50%; background: #eef7c8; border: 3px solid var(--lime-mid); color: #4b6604; display: flex; align-items: center; justify-content: center; font-size: 38px; margin: 0 auto 14px auto;">
+                <i class="ph-fill ph-check-circle"></i>
+            </div>
+
+            <h2 class="modal-title" style="padding-right: 0;">Pedido Recebido! 🎉</h2>
+            <p class="modal-subtitle" style="margin-bottom: 14px;">Seu pedido já chegou no painel da nossa açaiteria e logo entrará em preparo.</p>
+
+            <div style="background: #f5f0f9; border: 2px dashed var(--purple-mid); border-radius: 16px; padding: 14px; margin-bottom: 18px;">
+                <span style="font-size: 12px; font-weight: 800; color: #695175; text-transform: uppercase; display: block;">Código do seu pedido</span>
+                <strong id="sucesso-codigo" style="font-family: 'Merienda', cursive; font-size: 26px; color: var(--purple-deep);">#AP-0000</strong>
+                <div id="sucesso-resumo" style="font-size: 13px; color: #594463; margin-top: 6px; font-weight: 700;"></div>
+            </div>
+
+            <button type="button" class="btn-modal-bag" style="width: 100%; height: 50px; font-size: 14px;" onclick="closeDrawer('drawer-sucesso')">
+                <i class="ph-bold ph-thumbs-up"></i>
+                <span>Entendido, obrigado!</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Lógica Funcional, Prateleira e Envio Direto para o Supabase -->
     <script>
-        const WHATSAPP = "5538988276722"; 
+        // Inicialização do cliente Supabase
+        const SUPABASE_URL = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://asqmxzuykvtbsvrfmjgk.supabase.co";
+        const SUPABASE_ANON_KEY = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_qG8DoJtNj-5PQ-Gjg1ypzQ_NJ4b6lUa";
+        
+        const supabaseClient = (window.supabase && SUPABASE_URL.startsWith("http"))
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
+
         const TAXA = 4.00;
         let cart = [];
-        let basePrice = 0; let prodName = "";
+        let basePrice = 0;
+        let prodName = "";
+        let modalQty = 1;
+        let toastTimer = null;
 
-        // Cache de elementos do DOM para melhor performance
         const elCartCount = document.getElementById('cart-count');
         const elFabCount = document.getElementById('fab-count');
+        const elFabTotal = document.getElementById('fab-total');
         const elFabCart = document.getElementById('fab-cart');
         const elCartContent = document.getElementById('cart-content');
         const elCartEmpty = document.getElementById('cart-empty');
         const elCartFooter = document.getElementById('cart-footer');
         const elCartSubtotal = document.getElementById('cart-subtotal');
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if(entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                }
-            });
-        }, { threshold: 0.1 });
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2300);
+        }
 
-        function switchCategory(id, el) {
-            document.querySelectorAll('.bento-card').forEach(c => c.classList.remove('active'));
+        function updateBracketTitle(text) {
+            const box = document.getElementById('bracket-box');
+            document.getElementById('bracket-label').innerText = text;
+            box.style.transform = 'scale(1.08)';
+            setTimeout(() => box.style.transform = 'scale(1)', 220);
+        }
+
+        // Clique em um potinho customizável na prateleira (300ml, 500ml, 700ml, Zero, Cupuaçu)
+        function selectFromShelf(el, bracketText, scaleMultiplier, productName, productBasePrice, preselectedSizeVal) {
+            document.querySelectorAll('.shelf-pot-item').forEach(i => i.classList.remove('active'));
             el.classList.add('active');
-            document.querySelectorAll('.menu-section').forEach(s => {
-                s.classList.remove('active');
-                s.querySelectorAll('.reveal').forEach(r => r.classList.remove('active'));
+            updateBracketTitle(bracketText);
+
+            if (window.setBowlScaleFactor) {
+                window.setBowlScaleFactor(scaleMultiplier);
+            }
+
+            openProduct(productName, productBasePrice, preselectedSizeVal);
+        }
+
+        // Clique em um item especial ou barca na prateleira
+        function selectSpecialFromShelf(el, bracketText, scaleMultiplier, categoryId, itemName, itemPrice) {
+            document.querySelectorAll('.shelf-pot-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            updateBracketTitle(bracketText);
+
+            if (window.setBowlScaleFactor) {
+                window.setBowlScaleFactor(scaleMultiplier);
+            }
+
+            switchCategory(categoryId);
+            document.getElementById('menu-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function switchCategory(id, clickedEl) {
+            document.querySelectorAll('.lime-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${id}'`));
             });
+            document.querySelectorAll('.organic-cat-card').forEach(card => {
+                card.classList.toggle('active', card.dataset.cat === id);
+            });
+
+            document.querySelectorAll('.menu-section').forEach(s => s.classList.remove('active'));
             const target = document.getElementById(id);
-            target.classList.add('active');
-            setTimeout(() => {
-                target.querySelectorAll('.reveal').forEach(r => r.classList.add('active'));
-            }, 50);
+            if (target) target.classList.add('active');
+
+            if (clickedEl && clickedEl.classList.contains('lime-tab')) {
+                document.getElementById('menu-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function openDrawer(id) { document.getElementById(id).classList.add('active'); }
         function closeDrawer(id) { document.getElementById(id).classList.remove('active'); }
 
-        function openProduct(name, price) {
-            prodName = name; basePrice = price;
+        function openProduct(name, price, preselectedSize = '300ml|0') {
+            prodName = name;
+            basePrice = price;
+            modalQty = 1;
+            document.getElementById('modal-qty-val').innerText = modalQty;
             document.getElementById('prod-title').innerText = name;
-            document.querySelector('input[name="size"]').checked = true;
+            
+            const sizeRadios = document.querySelectorAll('input[name="size"]');
+            let matched = false;
+            sizeRadios.forEach(r => {
+                if (r.value === preselectedSize) {
+                    r.checked = true;
+                    matched = true;
+                }
+            });
+            if (!matched && sizeRadios.length) sizeRadios[0].checked = true;
+
             document.querySelectorAll('.cb-addon').forEach(cb => cb.checked = false);
             document.getElementById('prod-obs').value = "";
             calcLivePrice();
             openDrawer('drawer-product');
         }
 
-        function calcLivePrice() {
-            let total = basePrice;
+        function changeModalQty(delta) {
+            modalQty = Math.max(1, modalQty + delta);
+            document.getElementById('modal-qty-val').innerText = modalQty;
+            calcLivePrice();
+        }
+
+        function calcUnitLivePrice() {
+            let unit = basePrice;
             const size = document.querySelector('input[name="size"]:checked');
-            if(size) total += parseFloat(size.value.split('|')[1]);
-            document.querySelectorAll('.cb-addon:checked').forEach(cb => total += parseFloat(cb.value.split('|')[1]));
+            if(size) unit += parseFloat(size.value.split('|')[1]);
+            document.querySelectorAll('.cb-addon:checked').forEach(cb => unit += parseFloat(cb.value.split('|')[1]));
+            return unit;
+        }
+
+        function calcLivePrice() {
+            const total = calcUnitLivePrice() * modalQty;
             document.getElementById('live-price-btn').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
             return total;
         }
 
-        function animateFab() {
-            elFabCart.classList.remove('pop');
-            void elFabCart.offsetWidth; 
-            elFabCart.classList.add('pop');
-        }
-
-        function addConfiguredProduct() {
+        function addConfiguredProduct(goDirectToCheckout = false) {
             const s = document.querySelector('input[name="size"]:checked').value.split('|');
-            let addons = []; document.querySelectorAll('.cb-addon:checked').forEach(c => addons.push(c.value.split('|')[0]));
+            let addons = [];
+            document.querySelectorAll('.cb-addon:checked').forEach(c => addons.push(c.value.split('|')[0]));
+            
             cart.push({
-                id: Date.now(), name: prodName, size: s[0], addons: addons,
-                obs: document.getElementById('prod-obs').value, unitPrice: calcLivePrice(), qty: 1
+                id: Date.now(),
+                name: prodName,
+                size: s[0],
+                addons: addons,
+                obs: document.getElementById('prod-obs').value.trim(),
+                unitPrice: calcUnitLivePrice(),
+                qty: modalQty
             });
+
             closeDrawer('drawer-product'); 
             updateCart();
-            animateFab();
+
+            if (goDirectToCheckout) {
+                proceedToCheckout();
+            } else {
+                showToast(`${modalQty}x ${prodName} (${s[0]}) na sacola!`);
+            }
         }
 
         function quickAdd(name, price) {
             cart.push({ id: Date.now(), name: name, size: '', addons: [], obs: '', unitPrice: price, qty: 1 });
             updateCart();
-            animateFab();
+            showToast(`${name} adicionado à sacola!`);
+        }
+
+        function quickBuyNow(name, price) {
+            cart.push({ id: Date.now(), name: name, size: '', addons: [], obs: '', unitPrice: price, qty: 1 });
+            updateCart();
+            proceedToCheckout();
         }
 
         function updateCart() {
             const count = cart.reduce((s, i) => s + i.qty, 0);
+            const subTotal = cart.reduce((s, i) => s + (i.unitPrice * i.qty), 0);
+
             elCartCount.innerText = count;
             elFabCount.innerText = count;
+            elFabTotal.innerText = `R$ ${subTotal.toFixed(2).replace('.',',')}`;
             
-            if(count > 0) { elFabCart.classList.add('visible'); } else { elFabCart.classList.remove('visible'); }
+            if(count > 0) {
+                elFabCart.classList.add('visible');
+            } else {
+                elFabCart.classList.remove('visible');
+            }
             
             if(cart.length === 0) {
                 elCartContent.innerHTML = '';
@@ -681,17 +2208,19 @@
             elCartEmpty.style.display = 'none';
             elCartFooter.style.display = 'block';
             elCartContent.innerHTML = '';
-            let sub = 0;
 
             cart.forEach((i, idx) => {
-                sub += (i.unitPrice * i.qty);
                 let html = `<div class="cart-item">
-                    <div class="cart-item-title">${i.name} ${i.size ? `(${i.size})` : ''} - R$ ${(i.unitPrice * i.qty).toFixed(2).replace('.',',')}</div>
+                    <div class="cart-item-head">
+                        <span>${i.name} ${i.size ? `(${i.size})` : ''}</span>
+                        <span>R$ ${(i.unitPrice * i.qty).toFixed(2).replace('.',',')}</span>
+                    </div>
                     ${i.addons.length ? `<div class="cart-item-details">+ ${i.addons.join(', ')}</div>` : ''}
-                    <div class="cart-controls">
-                        <button class="remove-btn" onclick="rmItem(${idx})">Remover</button>
-                        <div class="qty-box">
-                            <button onclick="chgQty(${idx}, -1)">-</button>
+                    ${i.obs ? `<div class="cart-item-details">Obs: ${i.obs}</div>` : ''}
+                    <div class="cart-item-foot">
+                        <button class="remove-link" onclick="rmItem(${idx})">Remover item</button>
+                        <div class="qty-picker">
+                            <button onclick="chgQty(${idx}, -1)">−</button>
                             <span>${i.qty}</span>
                             <button onclick="chgQty(${idx}, 1)">+</button>
                         </div>
@@ -699,82 +2228,162 @@
                 </div>`;
                 elCartContent.insertAdjacentHTML('beforeend', html);
             });
-            elCartSubtotal.innerText = `R$ ${sub.toFixed(2).replace('.',',')}`;
+            elCartSubtotal.innerText = `R$ ${subTotal.toFixed(2).replace('.',',')}`;
+            refreshCheckoutTotals();
         }
 
-        function chgQty(i, d) { cart[i].qty += d; if(cart[i].qty <= 0) cart.splice(i, 1); updateCart(); }
-        function rmItem(i) { cart.splice(i, 1); updateCart(); }
+        function chgQty(i, d) {
+            cart[i].qty += d;
+            if(cart[i].qty <= 0) cart.splice(i, 1);
+            updateCart();
+        }
+        function rmItem(i) {
+            cart.splice(i, 1);
+            updateCart();
+        }
 
-        function proceedToCheckout() { closeDrawer('drawer-cart'); stepCheck(1); openDrawer('drawer-checkout'); }
-        
-        function stepCheck(step) {
-            document.getElementById('chk-step-1').style.display = step === 1 ? 'block' : 'none';
-            document.getElementById('chk-step-2').style.display = step === 2 ? 'block' : 'none';
-            if(step === 2 && document.getElementById('chk-tipo').value === 'retirada') {
-                document.getElementById('address-container').style.display = 'none';
-            } else {
-                document.getElementById('address-container').style.display = 'block';
+        function proceedToCheckout() {
+            if (cart.length === 0) {
+                showToast('Escolha um açaí primeiro!');
+                return;
             }
-            let sub = cart.reduce((s, i) => s + (i.unitPrice * i.qty), 0);
-            let tot = sub + (document.getElementById('chk-tipo').value === 'entrega' ? TAXA : 0);
+            closeDrawer('drawer-cart');
+            refreshCheckoutTotals();
+            openDrawer('drawer-checkout');
+        }
+
+        function selectDeliveryMode(mode) {
+            document.getElementById('chk-tipo').value = mode;
+            document.getElementById('seg-entrega').classList.toggle('active', mode === 'entrega');
+            document.getElementById('seg-retirada').classList.toggle('active', mode === 'retirada');
+            document.getElementById('address-container').style.display = mode === 'entrega' ? 'block' : 'none';
+            document.getElementById('chk-fee-row').style.display = mode === 'entrega' ? 'flex' : 'none';
+            refreshCheckoutTotals();
+        }
+
+        function selectPayment(pay, el) {
+            document.getElementById('chk-pagamento').value = pay;
+            document.querySelectorAll('.pay-option').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('chk-troco').style.display = pay === 'dinheiro' ? 'block' : 'none';
+        }
+
+        function refreshCheckoutTotals() {
+            const sub = cart.reduce((s, i) => s + (i.unitPrice * i.qty), 0);
+            const tipo = document.getElementById('chk-tipo').value;
+            const tot = sub + (tipo === 'entrega' ? TAXA : 0);
+            document.getElementById('chk-sub-val').innerText = `R$ ${sub.toFixed(2).replace('.',',')}`;
             document.getElementById('final-total').innerText = `R$ ${tot.toFixed(2).replace('.',',')}`;
         }
 
-        function toggleDelivery() { stepCheck(1); }
-        function toggleTroco() { document.getElementById('chk-troco').style.display = document.getElementById('chk-pagamento').value === 'dinheiro' ? 'block' : 'none'; }
+        function mascaraTelefone(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+            if (v.length > 6) {
+                input.value = `(${v.slice(0,2)}) ${v.slice(2, v.length - 4)}-${v.slice(-4)}`;
+            } else if (v.length > 2) {
+                input.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
+            } else if (v.length > 0) {
+                input.value = `(${v}`;
+            }
+        }
 
-        // Mensagem WhatsApp à prova de falhas com Emojis (Unicodes)
-        function finishOrder() {
+        async function finishOrder() {
             const nome = document.getElementById('chk-nome').value.trim();
-            if(!nome) return alert('Preencha seu nome');
-            
-            let t = `*NOVO PEDIDO | AÇAÍ PREMIUM*\n\n`;
-            let sub = 0;
-            
-            cart.forEach(i => { 
-                sub += (i.unitPrice * i.qty); 
-                t += `\u25AA *${i.qty}x ${i.name}* ${i.size ? `(${i.size})` : ''}\n`;
-                if(i.addons.length > 0) t += `   \u2795 ${i.addons.join(', ')}\n`;
-                if(i.obs) t += `   \uD83D\uDCDD Obs: ${i.obs}\n`;
-                t += `\n`;
-            });
-            
+            if (!nome) return alert('Por favor, informe seu nome.');
+
+            const telefone = document.getElementById('chk-telefone').value.trim();
+            if (!telefone || telefone.replace(/\D/g, '').length < 10) {
+                return alert('Por favor, informe um telefone válido com DDD.');
+            }
+
             const tipo = document.getElementById('chk-tipo').value;
-            let tot = sub + (tipo === 'entrega' ? TAXA : 0);
-            
-            t += `\uD83D\uDCB0 *Subtotal:* R$ ${sub.toFixed(2).replace('.', ',')}\n`;
-            if(tipo === 'entrega') t += `\uD83D\uDEF5 *Entrega:* R$ ${TAXA.toFixed(2).replace('.', ',')}\n`;
-            t += `*\uD83E\uDDFE TOTAL: R$ ${tot.toFixed(2).replace('.', ',')}*\n\n`;
-            
-            t += `\uD83D\uDC64 *Cliente:* ${nome}\n`;
-            t += `\uD83D\uDCCD *Modo:* ${tipo === 'entrega' ? 'Entrega em Domicílio' : 'Retirada na Loja'}\n`;
-            
-            if(tipo === 'entrega') {
-                const rua = document.getElementById('chk-rua').value;
-                const num = document.getElementById('chk-num').value;
-                const bairro = document.getElementById('chk-bairro').value;
-                if(!rua || !num || !bairro) {
-                    alert('Preencha os campos obrigatórios do endereço (Rua, Número, Bairro).');
-                    return;
+            let enderecoFinal = 'Retirada na Loja';
+
+            if (tipo === 'entrega') {
+                const rua = document.getElementById('chk-rua').value.trim();
+                const num = document.getElementById('chk-num').value.trim();
+                const bairro = document.getElementById('chk-bairro').value.trim();
+                if (!rua || !num || !bairro) {
+                    return alert('Preencha Rua, Número e Bairro para entrega.');
                 }
-                t += `\uD83C\uDFE0 *Endereço:* ${rua}, nº ${num} - ${bairro}\n`;
+                enderecoFinal = `${rua}, nº ${num} - ${bairro}`;
             }
-            
-            const pagSel = document.getElementById('chk-pagamento');
-            const pag = pagSel.options[pagSel.selectedIndex].text;
-            t += `\uD83D\uDCB3 *Pagamento:* ${pag}\n`;
-            
-            if (pagSel.value === 'dinheiro') {
-                const troco = document.getElementById('chk-troco').value;
-                if(troco) t += `\uD83D\uDCB5 *Troco para:* R$ ${troco}\n`;
+
+            if (!supabaseClient) {
+                return alert('Configure sua SUPABASE_URL e SUPABASE_ANON_KEY no arquivo supabase-config.js antes de enviar pedidos.');
             }
-            
-            const url = `https://api.whatsapp.com/send?phone=${WHATSAPP}&text=${encodeURIComponent(t)}`;
-            window.open(url, '_blank');
+
+            const btnSubmit = document.getElementById('btn-submit-order');
+            const btnText = document.getElementById('btn-submit-text');
+            btnSubmit.disabled = true;
+            btnText.innerText = 'Enviando pedido...';
+
+            try {
+                const subtotal = cart.reduce((s, i) => s + (i.unitPrice * i.qty), 0);
+                const taxaEntrega = tipo === 'entrega' ? TAXA : 0;
+                const valorTotal = subtotal + taxaEntrega;
+                const pagVal = document.getElementById('chk-pagamento').value;
+                const trocoVal = pagVal === 'dinheiro' ? document.getElementById('chk-troco').value.trim() : null;
+
+                // Código amigável do pedido (Ex: AP-4829)
+                const codigoPedido = 'AP-' + Math.floor(1000 + Math.random() * 9000);
+
+                // Monta os itens estruturados
+                const itensPedido = cart.map(i => ({
+                    qty: i.qty,
+                    name: i.name,
+                    size: i.size || '',
+                    addons: i.addons || [],
+                    obs: i.obs || '',
+                    unitPrice: Number(i.unitPrice)
+                }));
+
+                const payloadPedido = {
+                    codigo_pedido: codigoPedido,
+                    cliente_nome: nome,
+                    cliente_telefone: telefone,
+                    tipo_entrega: tipo,
+                    endereco: enderecoFinal,
+                    forma_pagamento: pagVal,
+                    troco_para: trocoVal || null,
+                    subtotal: Number(subtotal.toFixed(2)),
+                    taxa_entrega: Number(taxaEntrega.toFixed(2)),
+                    valor_total: Number(valorTotal.toFixed(2)),
+                    itens: itensPedido,
+                    status: 'Novo'
+                };
+
+                // IMPORTANTE: Não usamos .select() aqui pois o cliente (anon) só tem permissão de INSERT (Segurança RLS)
+                const { error } = await supabaseClient
+                    .from('pedidos')
+                    .insert([payloadPedido]);
+
+                if (error) {
+                    throw error;
+                }
+
+                // Sucesso! Limpa a sacola e exibe confirmação
+                cart = [];
+                updateCart();
+                closeDrawer('drawer-checkout');
+
+                document.getElementById('sucesso-codigo').innerText = `#${codigoPedido}`;
+                document.getElementById('sucesso-resumo').innerText =
+                    `${tipo === 'entrega' ? '🛵 Entrega em: ' + enderecoFinal : '🏪 Retirada na Loja'} • Total: R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
+                openDrawer('drawer-sucesso');
+
+            } catch (err) {
+                console.error('Erro ao salvar pedido:', err);
+                alert('Não foi possível enviar o pedido no momento. Verifique sua conexão e tente novamente.');
+            } finally {
+                btnSubmit.disabled = false;
+                btnText.innerText = 'Confirmar e Enviar Pedido';
+            }
         }
     </script>
 
-    <!-- Lógica do THREE.JS Otimizada e Limpa -->
+    <!-- Lógica do THREE.JS com Escala Dinâmica pela Prateleira -->
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -789,27 +2398,22 @@
         camera.position.set(0, 1.5, 3.5);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        // OTIMIZAÇÃO DE GPU: Limita a resolução no máximo ao dobro do normal, evitando superaquecimento em iPhones/Mobiles
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.toneMapping = THREE.NoToneMapping;
         renderer.toneMappingExposure = 1.0;
         container.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
         scene.add(ambientLight);
 
-       const purpleLight1 = new THREE.DirectionalLight(0x8A2BE2, 0.5);
-       purpleLight1.position.set(2, 3, 2);
-       scene.add(purpleLight1);
+        const sunLight = new THREE.DirectionalLight(0xfff5e6, 0.65);
+        sunLight.position.set(2, 4, 3);
+        scene.add(sunLight);
 
-       const purpleLight2 = new THREE.PointLight(0x9d4edd, 0.3, 10);
-       purpleLight2.position.set(-2, 1, -2);
-       scene.add(purpleLight2);
-
-       const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
-       fillLight.position.set(0, 2, 5);
-       scene.add(fillLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        fillLight.position.set(-2, 2, 4);
+        scene.add(fillLight);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -821,11 +2425,20 @@
         controls.minPolarAngle = Math.PI / 2.3; 
         controls.maxPolarAngle = Math.PI / 2.3; 
 
-        controls.addEventListener('start', function() {
-            const swipeHint = document.getElementById('swipe-hint');
-            if (swipeHint && !swipeHint.classList.contains('hidden')) {
-                swipeHint.classList.add('hidden');
-            }
+        let loadedModel = null;
+        let baseModelScale = 1;
+        let currentMultiplier = 1.0;
+        let targetMultiplier = 1.0;
+
+        window.setBowlScaleFactor = function(factor) {
+            targetMultiplier = factor;
+        };
+
+        document.getElementById('rot-left').addEventListener('click', () => {
+            if (loadedModel) loadedModel.rotation.y -= 0.6;
+        });
+        document.getElementById('rot-right').addEventListener('click', () => {
+            if (loadedModel) loadedModel.rotation.y += 0.6;
         });
 
         const loader = new GLTFLoader();
@@ -834,24 +2447,24 @@
             './acai_bowl.glb', 
             function (gltf) {
                 const model = gltf.scene;
+                loadedModel = model;
 
                 if(loadingText) {
                     loadingText.style.opacity = '0';
-                    setTimeout(() => loadingText.style.display = 'none', 500);
+                    setTimeout(() => loadingText.style.display = 'none', 400);
                 }
 
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3());
                 const maxDim = Math.max(size.x, size.y, size.z);
-                const scale = 2.0 / maxDim; 
-                model.scale.set(scale, scale, scale);
-                model.position.sub(center.multiplyScalar(scale));
+                baseModelScale = 2.0 / maxDim; 
+                
+                model.scale.set(baseModelScale, baseModelScale, baseModelScale);
+                model.position.sub(center.multiplyScalar(baseModelScale));
 
-                // INCLINAÇÃO
                 model.rotation.z = 22.5 * (Math.PI / 180);
 
-                // Remove reflexos ambientais intensos
                 model.traverse((node) => {
                     if (node.isMesh && node.material) {
                         node.material.roughness = 1.0; 
@@ -864,7 +2477,6 @@
                 scene.add(model);
             },
             function (xhr) {
-                // Barra de progresso para conexões lentas
                 if (xhr.lengthComputable && loadingText) {
                     const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
                     loadingText.innerText = "Preparando 3D... " + percentComplete + "%";
@@ -872,7 +2484,7 @@
             },
             function (error) {
                 console.error('Erro ao carregar o modelo 3D:', error);
-                if(loadingText) loadingText.innerText = "Erro ao carregar o 3D.";
+                if(loadingText) loadingText.style.display = 'none';
             }
         );
 
@@ -886,6 +2498,11 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            if (loadedModel) {
+                currentMultiplier += (targetMultiplier - currentMultiplier) * 0.12;
+                const s = baseModelScale * currentMultiplier;
+                loadedModel.scale.set(s, s, s);
+            }
             controls.update();
             renderer.render(scene, camera);
         }
