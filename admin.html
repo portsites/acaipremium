@@ -667,6 +667,33 @@
             color: #fff;
         }
 
+        .card-bottom-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .btn-whatsapp-notify {
+            width: 100%;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid #16a34a;
+            background: #dcfce7;
+            color: #15803d;
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-whatsapp-notify:hover {
+            background: #16a34a;
+            color: #fff;
+        }
+
         .empty-state {
             grid-column: 1 / -1;
             background: #fff;
@@ -1319,10 +1346,16 @@
                                 ` : ''}
                             </div>
 
-                            <button type="button" class="btn-print" onclick="printOrderTicket(${order.id})">
-                                <i class="ph-bold ph-printer"></i>
-                                <span>Imprimir Comanda</span>
-                            </button>
+                            <div class="card-bottom-btns">
+                                <button type="button" class="btn-print" onclick="printOrderTicket(${order.id})">
+                                    <i class="ph-bold ph-printer"></i>
+                                    <span>Imprimir Comanda</span>
+                                </button>
+                                <button type="button" class="btn-whatsapp-notify" onclick="notifyCustomerWhatsApp(${order.id})">
+                                    <i class="ph-fill ph-whatsapp-logo" style="font-size: 17px;"></i>
+                                    <span>Notificar Cliente</span>
+                                </button>
+                            </div>
                         </div>
                     </article>
                 `;
@@ -1330,10 +1363,65 @@
         }
 
         // ====================================================================
+        // NOTIFICAÇÃO DO CLIENTE NO WHATSAPP
+        // ====================================================================
+        function notifyCustomerWhatsApp(orderId, statusOverride) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            let phone = String(order.cliente_telefone || '').replace(/\D/g, '');
+            phone = phone.replace(/^0+/, '');
+            if (!phone) {
+                alert('Este pedido não possui um número de telefone válido.');
+                return;
+            }
+            if (phone.length === 10 || phone.length === 11) {
+                phone = '55' + phone;
+            }
+
+            const statusAtual = statusOverride || order.status;
+            const payLabels = { pix: 'PIX', cartao: 'Cartão', dinheiro: 'Dinheiro' };
+            const itensResumo = (Array.isArray(order.itens) ? order.itens : [])
+                .map(i => `▪ ${i.qty}x ${i.name}${i.size ? ' (' + i.size + ')' : ''}`)
+                .join('\n');
+
+            let msg = '';
+            if (statusAtual === 'Saiu para entrega') {
+                msg = `Olá, *${order.cliente_nome}*! 🍧🛵\n\n` +
+                      `Seu pedido *#${order.codigo_pedido || order.id}* na *Açaí Premium* acabou de *sair para entrega*!\n\n` +
+                      (itensResumo ? `*Itens do pedido:*\n${itensResumo}\n\n` : '') +
+                      `📍 *Endereço:* ${order.endereco || 'Entrega em domicílio'}\n` +
+                      `💰 *Total:* ${formatMoney(order.valor_total)} (${payLabels[order.forma_pagamento] || order.forma_pagamento})\n` +
+                      (order.troco_para ? `💵 *Troco para:* ${order.troco_para}\n` : '') +
+                      `\nFique atento(a), já já seu açaí chega bem geladinho aí! 💜`;
+            } else if (statusAtual === 'Pronto') {
+                msg = `Olá, *${order.cliente_nome}*! 🍧🏪\n\n` +
+                      `Seu pedido *#${order.codigo_pedido || order.id}* na *Açaí Premium* já está *pronto para retirada* na nossa loja!\n\n` +
+                      (itensResumo ? `*Itens do pedido:*\n${itensResumo}\n\n` : '') +
+                      `💰 *Total:* ${formatMoney(order.valor_total)} (${payLabels[order.forma_pagamento] || order.forma_pagamento})\n\n` +
+                      `Estamos te esperando! 💜`;
+            } else if (statusAtual === 'Em preparo') {
+                msg = `Olá, *${order.cliente_nome}*! 🍧✨\n\n` +
+                      `Seu pedido *#${order.codigo_pedido || order.id}* na *Açaí Premium* já está *em preparo*!\n` +
+                      `Assim que sair para entrega te avisamos por aqui. 💜`;
+            } else {
+                msg = `Olá, *${order.cliente_nome}*! Tudo bem? Aqui é da *Açaí Premium* sobre o seu pedido *#${order.codigo_pedido || order.id}* (${statusAtual}).`;
+            }
+
+            const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        // ====================================================================
         // ATUALIZAÇÃO DE STATUS NO BANCO
         // ====================================================================
         async function updateOrderStatus(orderId, newStatus) {
             if (!supabaseClient) return;
+
+            // Se o novo status for "Saiu para entrega", dispara a notificação no WhatsApp do cliente imediatamente
+            if (newStatus === 'Saiu para entrega') {
+                notifyCustomerWhatsApp(orderId, 'Saiu para entrega');
+            }
 
             // Atualização otimista na tela
             const idx = allOrders.findIndex(o => o.id === orderId);
